@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <!-- Login Script Removed -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Consórcio - CR Invest</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <!-- HEADER with centered logo -->
+    <header class="header">
+        <div class="header-center">
+            <img src="logo-nova.png" alt="CR Invest" class="header-logo" id="headerLogo">
+        </div>
+        <div class="header-actions">
+            <button class="btn-pdf" onclick="gerarPDF()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                </svg>
+                Gerar PDF
+            </button>
+        </div>
+    </header>
+
+    <!-- MODE TITLE + SELECTORS -->
+    <div class="title-section">
+        <div class="mode-title-row">
+            <button type="button" id="btnToggleTaxas" class="btn-eye" onclick="toggleTaxas()"
+                title="Mostrar/Ocultar taxas">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                </svg>
+            </button>
+            <button class="mode-text-btn active" id="btnIntegral" onclick="setMode('integral')">Parcela
+                Integral</button>
+            <span class="mode-divider">|</span>
+            <button class="mode-text-btn" id="btnReduzida" onclick="setMode('reduzida')">Parcela Reduzida</button>
+            <div id="pctReducaoContainer" style="display:none; align-items:center; gap:5px">
+                <input type="number" id="pctReducao" class="tipo-select" value="25" min="0" max="99"
+                    onchange="calcular()" style="width: 60px;">
+                <span class="unit-inline" style="color:var(--g500); font-weight:600">%</span>
+            </div>
+
+            <select id="tipoBem" class="tipo-select" onchange="calcular()">
+                <option value="imovel" selected>Imóvel</option>
+                <option value="automovel">Automóvel</option>
+                <option value="servicos">Serviços</option>
+            </select>
+
+            <span class="admin-sep">-</span>
+
+            <select id="administradora" class="admin-select" onchange="trocarAdministradora()">
+                <option value="porto_seguro" selected>Porto Seguro</option>
+                <option value="embracon">Embracon</option>
+                <option value="rodobens">Rodobens</option>
+                <option value="canopus">Canopus</option>
+                <option value="magalu">Magalu Consórcio</option>
+            </select>
+            <span id="adminLogoContainer" class="admin-logo-inline"></span>
+        </div>
+        <div style="display:none">
+        </div>
+    </div>
+
+    <!-- MAIN SIMULATOR -->
+    <div class="simulator">
+        <!-- LEFT: INPUTS -->
+        <div class="inputs-panel">
+            <!-- Row 1: Taxas (hidden by default) -->
+            <div class="taxas-grid" id="taxasRow" style="display:none">
+                <div class="field">
+                    <label class="field-label">Taxa Adm. :</label>
+                    <div class="field-input">
+                        <input type="number" id="taxaAdm" value="17.0" step="0.1" min="0" max="30" onchange="calcular()"
+                            oninput="calcular()">
+                        <span class="unit">%</span>
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="field-label">Fundo Reserva :</label>
+                    <div class="field-input">
+                        <input type="number" id="fundoReserva" value="0.5" step="0.1" min="0" max="10"
+                            onchange="calcular()" oninput="calcular()">
+                        <span class="unit">%</span>
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="field-label">Seguro <span class="info-pf">(PF)</span></label>
+                    <div class="field-input">
+                        <input type="number" id="seguroPrestamista" value="0" step="0.001" min="0" max="1"
+                            onchange="calcular()" oninput="calcular()">
+                        <span class="unit">%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: Crédito + Prazo -->
+            <div class="row-2col">
+                <div class="field">
+                    <label class="field-label">Valor do Crédito :</label>
+                    <div class="field-input">
+                        <span class="prefix">R$</span>
+                        <input type="text" id="valorCredito" value="2.000.000,00" onchange="calcular()"
+                            oninput="formatCurrencyInput(this); calcular()">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="field-label">Prazo do Grupo :</label>
+                    <div class="field-input">
+                        <input type="number" id="prazoGrupo" value="155" step="1" min="1" max="240"
+                            onchange="calcular()" oninput="calcular()">
+                        <span class="unit">Meses</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 3: Reduzir -->
+            <div class="row-2col">
+                <div class="field">
+                    <label class="field-label">Reduzir após a contemplação: <span class="tooltip-icon"
+                            title="Escolha se deseja reduzir o valor da parcela ou o prazo após a contemplação">&#9432;</span></label>
+                    <div class="radio-row">
+                        <label class="radio-opt">
+                            <input type="radio" name="reducao" value="parcela" checked onchange="calcular()">
+                            <span>Parcela</span>
+                        </label>
+                        <label class="radio-opt">
+                            <input type="radio" name="reducao" value="prazo" onchange="calcular()">
+                            <span>Prazo</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LANCE BOX -->
+            <div class="lance-box">
+                <!-- Row: Embutido -->
+                <div class="lance-row">
+                    <div class="lance-field">
+                        <label class="lance-lbl-red">% Lance Embutido</label>
+                        <div class="field-input">
+                            <input type="number" id="lanceEmbutido" value="30.0" step="0.5" min="0" max="50"
+                                onchange="calcular()" oninput="calcular()">
+                            <span class="unit">%</span>
+                        </div>
+                    </div>
+                    <div class="lance-field">
+                        <label class="lance-lbl-dark">Valor Embutido</label>
+                        <div class="field-input readonly">
+                            <span class="prefix">R$</span>
+                            <input type="text" id="valorEmbutido" value="600.000,00" readonly>
+                        </div>
+                    </div>
+                </div>
+                <!-- Row: A pagar -->
+                <div class="lance-row">
+                    <div class="lance-field">
+                        <label class="lance-lbl-red">% Lance a pagar</label>
+                        <div class="field-input">
+                            <input type="number" id="lancePagar" value="10.0" step="0.5" min="0" max="50"
+                                onchange="calcular()" oninput="calcular()">
+                            <span class="unit">%</span>
+                        </div>
+                    </div>
+                    <div class="lance-field">
+                        <label class="lance-lbl-dark">Valor a pagar <span class="tooltip-icon"
+                                title="Valor Total - Valor Embutido">&#9432;</span></label>
+                        <div class="field-input readonly">
+                            <span class="prefix">R$</span>
+                            <input type="text" id="valorPagar" value="356.000,00" readonly>
+                        </div>
+                    </div>
+                </div>
+                <!-- Row: Total -->
+                <div class="lance-row">
+                    <div class="lance-field">
+                        <label class="lance-lbl-red">% Lance Total</label>
+                        <div class="field-input readonly">
+                            <input type="text" id="lanceTotal" value="40,00" readonly>
+                            <span class="unit">%</span>
+                        </div>
+                    </div>
+                    <div class="lance-field">
+                        <label class="lance-lbl-dark">Valor Total</label>
+                        <div class="field-input readonly">
+                            <span class="prefix">R$</span>
+                            <input type="text" id="valorTotal" value="956.000,00" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: RESULTS -->
+        <div class="results-panel">
+            <!-- Primeiras N Parcelas -->
+            <div class="result-group">
+                <div class="result-title">
+                    <span class="rt-main">Primeiras</span>
+                    <select id="primeirasN" class="inline-select" onchange="calcular()">
+                        <option value="1">À Vista</option>
+                        <option value="3">3</option>
+                        <option value="5">5</option>
+                        <option value="12" selected>12</option>
+                    </select>
+                    <span class="rt-main">parcelas</span>
+                    <!-- Antecipada controls -->
+                    <span class="antecipada-inline" id="antecipada-group">
+                        (Antecipada
+                        <input type="number" id="antecipada" class="inline-input small" value="2" step="0.1" min="0"
+                            max="100" onchange="calcular()" oninput="calcular()">
+                        <span class="unit-inline">%</span>
+                        + parcela)
+                    </span>
+                    <span class="rt-sub-gold" id="antecipada-label">(Antecipada + parcela do mês)</span>
+                </div>
+                <div class="field-input result-field">
+                    <span class="prefix">R$</span>
+                    <input type="text" id="resultPrimeiras" value="18.494,62" readonly>
+                </div>
+            </div>
+
+            <!-- Demais Parcelas -->
+            <div class="result-group">
+                <div class="result-title">
+                    <span class="rt-bold">Demais Parcelas</span>
+                    <span class="rt-sub-gold">(Antes da contemplação)</span>
+                </div>
+                <div class="field-input result-field">
+                    <span class="prefix">R$</span>
+                    <input type="text" id="resultDemais" value="15.161,29" readonly>
+                </div>
+            </div>
+
+            <!-- Crédito Líquido -->
+            <div class="result-group">
+                <div class="result-title">
+                    <span class="rt-bold big">Crédito Líquido</span>
+                </div>
+                <div class="field-input result-field highlight">
+                    <span class="prefix highlight-prefix">R$</span>
+                    <input type="text" id="resultCredLiquido" value="1.400.000,00" readonly class="highlight-value">
+                </div>
+            </div>
+
+            <!-- Valor Parcela pós-contemplado -->
+            <div class="result-group">
+                <div class="result-title">
+                    <span class="rt-bold">Valor Parcela</span>
+                    <span class="rt-sub-gold">(pós-contemplado)</span>
+                </div>
+                <div class="field-input result-field">
+                    <span class="prefix">R$</span>
+                    <input type="text" id="resultPosContemp" value="8.931,85" readonly>
+                </div>
+            </div>
+
+            <!-- Prazo Restante -->
+            <div class="result-group">
+                <div class="result-title">
+                    <span class="rt-bold">Prazo Restante</span>
+                </div>
+                <div class="field-input result-field">
+                    <input type="text" id="resultPrazoRestante" value="154" readonly>
+                    <span class="unit">Meses</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+
+    <!-- LOGIN OVERLAY -->
+    <div id="loginOverlay">
+        <div class="login-card">
+            <img src="logo-nova.png" alt="CR Invest" class="login-logo">
+            <h2 style="margin-bottom: 20px; font-size: 18px; color: #333; font-weight: 600;">Plataforma Exclusiva</h2>
+            <form onsubmit="handleLogin(event)">
+                <input type="password" id="passwordInput" class="login-input" placeholder="Senha de Acesso" required>
+                <button type="submit" class="login-btn">Entrar</button>
+                <p id="loginError" class="error-msg">Senha incorreta</p>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function handleLogin(e) {
+            e.preventDefault();
+            const pass = document.getElementById('passwordInput').value;
+            // Senha definida: vendas@2026
+            if (pass === 'vendas@2026') {
+                document.getElementById('loginOverlay').style.display = 'none';
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+            }
+        }
+    </script>
+</body>
+
+</html>
