@@ -290,6 +290,7 @@ function gerarPDF() {
         const admin = document.getElementById('administradora');
         const adminKey = admin.value;
         const adminName = admin.options[admin.selectedIndex].text;
+        const observacoes = document.getElementById('observacoes').value;
         const d = adminData[adminKey];
         // Use Base64 logos if available to avoid Tainted Canvas
         const adminLogoSrc = (d && d.logo && logoBase64[d.logo]) ? logoBase64[d.logo] : (d ? d.logo : '');
@@ -457,6 +458,13 @@ function gerarPDF() {
                     </div>
                 </div>
             </div>
+            
+            ${observacoes ? `
+            <div class="pdf-notes" style="margin-top:30px; padding-top:20px; border-top:1px solid #ddd;">
+                <h3 style="font-size:14px; font-weight:700; margin-bottom:8px; color:#111; text-transform:uppercase;">Observações</h3>
+                <p style="font-size:12px; line-height:1.5; color:#444; white-space:pre-wrap;">${observacoes}</p>
+            </div>
+            ` : ''}
 
             <div class="footer">
                 <span>CR Invest - Consultoria Especializada</span>

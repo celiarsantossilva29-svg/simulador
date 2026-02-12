@@ -80,12 +80,23 @@ body {
 }
 
 .header-brand {
-    font-size: 34px;
-    font-weight: 800;
-    color: var(--black);
-    letter-spacing: 4px;
-    font-family: 'Inter', sans-serif;
+    font-size: 36px;
+    font-weight: 900;
+    /* Extra Bold for impact */
+    color: #0a0a0a;
+    /* Deep Black */
+
+    letter-spacing: 6px;
+    /* Elegant wide spacing */
+    font-family: 'Playfair Display', serif;
     text-transform: uppercase;
+
+    /* Clean, crisp rendering - No cheap effects */
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+
+    margin: 0;
+    line-height: 1;
 }
 
 .header-actions {
@@ -767,4 +778,39 @@ input.taxa-masked {
         bottom: 16px;
         right: 16px;
     }
+}
+
+/* ── NOTES PANEL ── */
+.notes-panel {
+    width: 100%;
+    /* Max width = Input (500) + Result (400) + Gap (40) */
+    max-width: 940px;
+    flex: 1 1 100%;
+    margin: 24px auto 0;
+    /* Center horizontally */
+    background: #fff;
+    padding: 24px;
+    border-radius: var(--r);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--g200);
+}
+
+.notes-panel textarea {
+    width: 100%;
+    min-height: 100px;
+    margin-top: 12px;
+    padding: 12px;
+    border: 1px solid var(--g300);
+    border-radius: 4px;
+    font: 400 14px/1.5 'Inter', sans-serif;
+    color: var(--black);
+    resize: vertical;
+    outline: none;
+    transition: border-color var(--t);
+    background: #f9f9f9;
+}
+
+.notes-panel textarea:focus {
+    border-color: var(--gold);
+    background: white;
 }
