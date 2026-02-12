@@ -58,7 +58,8 @@ function trocarAdministradora() {
     const d = adminData[key];
     const container = document.getElementById('adminLogoContainer');
     if (d && d.logo) {
-        container.innerHTML = `<img src="${d.logo}" alt="${d.name}" class="admin-logo-img" style="height:${d.logoH}px">`;
+        container.innerHTML = `<img src="${d.logo}" alt="${d.name}" class="admin-logo-img" style="height:${d.logoH}px">
+        <img src="logo-nova.png" alt="CR Invest" style="height:80px; margin-left:15px; vertical-align:middle; opacity:0.8">`;
     } else if (d) {
         const initials = d.name.split(' ').map(w => w[0]).join('').substring(0, 2);
         container.innerHTML = `<svg width="28" height="28" viewBox="0 0 28 28" style="vertical-align:middle">
@@ -280,186 +281,216 @@ function calcular() {
 // ========================================
 
 function gerarPDF() {
-    const admin = document.getElementById('administradora');
-    const adminKey = admin.value;
-    const adminName = admin.options[admin.selectedIndex].text;
-    const d = adminData[adminKey];
-    const adminColor = d ? d.color : '#333';
+    if (typeof html2pdf === 'undefined') {
+        alert('Carregando biblioteca PDF... Aguarde um instante e tente novamente.');
+        // Retry logic could go here, but alert is enough for now.
+        return;
+    }
+    try {
+        const admin = document.getElementById('administradora');
+        const adminKey = admin.value;
+        const adminName = admin.options[admin.selectedIndex].text;
+        const d = adminData[adminKey];
+        // Use Base64 logos if available to avoid Tainted Canvas
+        const adminLogoSrc = (d && d.logo && logoBase64[d.logo]) ? logoBase64[d.logo] : (d ? d.logo : '');
+        const headerLogoSrc = logoBase64['logo-nova.png'] || 'logo-nova.png';
 
-    const tipo = document.getElementById('tipoBem');
-    const tipoText = tipo.options[tipo.selectedIndex].text;
+        const adminColor = d ? d.color : '#333';
 
-    const modeLabel = currentMode === 'integral' ? 'Parcela Integral' : 'Parcela Reduzida';
-    const primeirasN = document.getElementById('primeirasN').value;
-    const primeirasLabel = primeirasN === '1' ? 'À Vista' : primeirasN;
+        const tipo = document.getElementById('tipoBem');
+        const tipoText = tipo.options[tipo.selectedIndex].text;
 
-    const taxaAdm = document.getElementById('taxaAdm').value;
-    const fundoReserva = document.getElementById('fundoReserva').value;
-    const seguro = document.getElementById('seguroPrestamista');
-    const seguroVal = parseFloat(seguro.value) || 0;
-    const seguroText = seguroVal === 0 ? 'Sem Seguro' : seguroVal + '%';
-    const credito = document.getElementById('valorCredito').value;
-    const prazo = document.getElementById('prazoGrupo').value;
+        const modeLabel = currentMode === 'integral' ? 'Parcela Integral' : 'Parcela Reduzida';
+        const primeirasN = document.getElementById('primeirasN').value;
+        const primeirasLabel = primeirasN === '1' ? 'À Vista' : primeirasN;
 
-    const lanceEmb = document.getElementById('lanceEmbutido').value;
-    const valorEmb = document.getElementById('valorEmbutido').value;
-    const lancePag = document.getElementById('lancePagar').value;
-    const valorPag = document.getElementById('valorPagar').value;
-    const lanceTotal = document.getElementById('lanceTotal').value;
-    const valorTotal = document.getElementById('valorTotal').value;
+        const taxaAdm = document.getElementById('taxaAdm').value;
+        const fundoReserva = document.getElementById('fundoReserva').value;
+        const seguro = document.getElementById('seguroPrestamista');
+        const seguroVal = parseFloat(seguro.value) || 0;
+        const seguroText = seguroVal === 0 ? 'Sem Seguro' : seguroVal + '%';
+        const credito = document.getElementById('valorCredito').value;
+        const prazo = document.getElementById('prazoGrupo').value;
 
-    const resultPrim = document.getElementById('resultPrimeiras').value;
-    const resultDemais = document.getElementById('resultDemais').value;
-    const resultCL = document.getElementById('resultCredLiquido').value;
-    const resultPos = document.getElementById('resultPosContemp').value;
-    const resultPrazo = document.getElementById('resultPrazoRestante').value;
+        const lanceEmb = document.getElementById('lanceEmbutido').value;
+        const valorEmb = document.getElementById('valorEmbutido').value;
+        const lancePag = document.getElementById('lancePagar').value;
+        const valorPag = document.getElementById('valorPagar').value;
+        const lanceTotal = document.getElementById('lanceTotal').value;
+        const valorTotal = document.getElementById('valorTotal').value;
 
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const resultPrim = document.getElementById('resultPrimeiras').value;
+        const resultDemais = document.getElementById('resultDemais').value;
+        const resultCL = document.getElementById('resultCredLiquido').value;
+        const resultPos = document.getElementById('resultPosContemp').value;
+        const resultPrazo = document.getElementById('resultPrazoRestante').value;
 
-    const html = `<!DOCTYPE html>
-<html><head>
-<meta charset="UTF-8">
-<title>Simulação - CR Invest</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',sans-serif;background:#fff;color:#111;padding:40px 50px}
-.pdf-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:40px;padding-bottom:20px;border-bottom:2px solid #c9a84c}
-.pdf-header img{height:100px;object-fit:contain}
-.pdf-info{text-align:right}
-.pdf-info h1{font-size:24px;font-weight:800;color:#111;letter-spacing:-0.5px;margin-bottom:4px}
-.pdf-info p{font-size:12px;color:#666;text-transform:uppercase;letter-spacing:1px}
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-/* MAIN GRID */
-.main-grid{display:grid;grid-template-columns:1.2fr 1.8fr;gap:40px}
+        // Build the content for PDF
+        const element = document.createElement('div');
+        element.innerHTML = `
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+            *{margin:0;padding:0;box-sizing:border-box}
+            #pdf-content{font-family:'Inter',sans-serif;background:#fff;color:#111;padding:40px 50px;width:100%}
+            .pdf-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:40px;padding-bottom:20px;border-bottom:2px solid #c9a84c}
+            .pdf-header img{height:160px;object-fit:contain}
+            .pdf-info{text-align:right}
+            .pdf-info h1{font-size:24px;font-weight:800;color:#111;letter-spacing:-0.5px;margin-bottom:4px}
+            .pdf-info p{font-size:12px;color:#666;text-transform:uppercase;letter-spacing:1px}
 
-/* CARDS */
-.card{margin-bottom:24px}
-.card h3{font-size:11px;font-weight:700;color:#c9a84c;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.card h3::after{content:'';flex:1;height:1px;background:#eee}
+            /* MAIN GRID */
+            .main-grid{display:grid;grid-template-columns:1.2fr 1.8fr;gap:40px}
 
-/* SUMMARY BOX (CREDIT + TERM) */
-.summary-box{display:grid;grid-template-columns:1fr 1fr;gap:16px;background:#f9f9f9;padding:20px;border-radius:8px;margin-bottom:32px;border:1px solid #eee}
-.s-item .lbl{display:block;font-size:11px;color:#888;margin-bottom:4px;text-transform:uppercase}
-.s-item .val{display:block;font-size:20px;font-weight:700;color:#111}
+            /* CARDS */
+            .card{margin-bottom:24px}
+            .card h3{font-size:11px;font-weight:700;color:#c9a84c;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+            .card h3::after{content:'';flex:1;height:1px;background:#eee}
 
-/* LANCE (LIGHT) */
-.lance-card{background:#fff;color:#111;padding:24px;border-radius:10px;border:1px solid #ddd}
-.lance-card h3{color:#c9a84c;border:none;margin-bottom:16px}
-.lance-card h3::after{background:#eee}
-.l-row{display:flex;justify-content:space-between;margin-bottom:10px;font-size:13px;border-bottom:1px solid #f0f0f0;padding-bottom:10px}
-.l-row:last-child{border:none;margin:0;padding:0}
-.l-row .lbl{color:#666}
-.l-row .val{font-weight:600;color:#111}
+            /* SUMMARY BOX (CREDIT + TERM) */
+            .summary-box{display:grid;grid-template-columns:1fr 1fr;gap:16px;background:#f9f9f9;padding:20px;border-radius:8px;margin-bottom:32px;border:1px solid #eee}
+            .s-item .lbl{display:block;font-size:11px;color:#888;margin-bottom:4px;text-transform:uppercase}
+            .s-item .val{display:block;font-size:20px;font-weight:700;color:#111}
 
-/* RESULTS */
-.result-card{background:#fff}
-.r-row{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #f0f0f0}
-.r-row:last-child{border:none}
-.r-label{font-size:13px;color:#666;max-width:60%}
-.r-val{font-size:18px;font-weight:700;color:#111;text-align:right}
-.r-sub{font-size:11px;color:#999;display:block;margin-top:2px}
+            /* LANCE (LIGHT) */
+            .lance-card{background:#fff;color:#111;padding:24px;border-radius:10px;border:1px solid #ddd}
+            .lance-card h3{color:#c9a84c;border:none;margin-bottom:16px}
+            .lance-card h3::after{background:#eee}
+            .l-row{display:flex;justify-content:space-between;margin-bottom:10px;font-size:13px;border-bottom:1px solid #f0f0f0;padding-bottom:10px}
+            .l-row:last-child{border:none;margin:0;padding:0}
+            .l-row .lbl{color:#666}
+            .l-row .val{font-weight:600;color:#111}
 
-/* HIGHLIGHT LIQUID */
-.highlight-liquid{background:linear-gradient(135deg, rgba(201,168,76,0.15) 0%, rgba(201,168,76,0.05) 100%);border:1px solid #c9a84c;padding:20px;border-radius:8px;display:flex;justify-content:space-between;align-items:center}
-.hl-label{font-size:14px;font-weight:700;color:#8a7333;text-transform:uppercase}
-.hl-val{font-size:26px;font-weight:800;color:#111}
+            /* RESULTS */
+            .result-card{background:#fff}
+            .r-row{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #f0f0f0}
+            .r-row:last-child{border:none}
+            .r-label{font-size:13px;color:#666;max-width:60%}
+            .r-val{font-size:18px;font-weight:700;color:#111;text-align:right}
+            .r-sub{font-size:11px;color:#999;display:block;margin-top:2px}
 
-.admin-tag{display:inline-block;margin-top:8px}
+            /* HIGHLIGHT LIQUID */
+            .highlight-liquid{background:linear-gradient(135deg, rgba(201,168,76,0.15) 0%, rgba(201,168,76,0.05) 100%);border:1px solid #c9a84c;padding:20px;border-radius:8px;display:flex;justify-content:space-between;align-items:center}
+            .hl-label{font-size:14px;font-weight:700;color:#8a7333;text-transform:uppercase}
+            .hl-val{font-size:26px;font-weight:800;color:#111}
 
-.footer{margin-top:60px;pt:20px;border-top:1px solid #eee;font-size:10px;color:#ccc;display:flex;justify-content:space-between}
-@media print{body{padding:0} .summary-box, .lance-card, .highlight-liquid{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}}
-</style>
-</head><body>
+            .admin-tag{display:inline-block;margin-top:8px}
 
-<div class="pdf-header">
-    <img src="logo-nova.png" alt="CR Invest">
-    <div class="pdf-info">
-        <h1>Simulação de Consórcio</h1>
-        <p>${modeLabel} • ${tipoText}</p>
-        <div class="admin-tag">
-            ${d && d.logo ? `<img src="${d.logo}" style="height:90px;object-fit:contain">` : `<span style="font-weight:700;color:${adminColor}">${adminName}</span>`}
-        </div>
-    </div>
-</div>
-
-<!-- TOP SUMMARY: CREDIT & TERM -->
-<div class="summary-box">
-    <div class="s-item">
-        <span class="lbl">Valor do Crédito</span>
-        <span class="val">R$ ${credito}</span>
-    </div>
-    <div class="s-item">
-        <span class="lbl">Prazo do Plano</span>
-        <span class="val">${prazo} Meses</span>
-    </div>
-</div>
-
-<div class="main-grid">
-    <!-- LEFT COLUMN: LANCE -->
-    <div>
-        <div class="lance-card">
-            <h3>Composição do Lance</h3>
-            <div class="l-row"><span class="lbl">Embutido (${lanceEmb}%)</span><span class="val">R$ ${valorEmb}</span></div>
-            <div class="l-row"><span class="lbl">Recurso Próprio (${lancePag}%)</span><span class="val">R$ ${valorPag}</span></div>
-            <div class="l-row" style="margin-top:15px;padding-top:15px;border-top:1px solid rgba(255,255,255,0.2)">
-                <span class="lbl" style="color:#c9a84c">Lance Total (${lanceTotal}%)</span>
-                <span class="val" style="color:#c9a84c;font-size:16px">R$ ${valorTotal}</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- RIGHT COLUMN: RESULTS -->
-    <div>
-        <div class="card">
-            <h3>Fluxo de Pagamento</h3>
-            
-            <div class="r-row">
-                <div class="r-label">1ª Parcela (${primeirasLabel})
-                    <span class="r-sub">Entrada (Antecipada + Parcela)</span>
+            .footer{margin-top:60px;pt:20px;border-top:1px solid #eee;font-size:10px;color:#ccc;display:flex;justify-content:space-between}
+        </style>
+        
+        <div id="pdf-content">
+            <div class="pdf-header">
+                <img src="${headerLogoSrc}" alt="CR Invest">
+                <div class="pdf-info">
+                    <h1>Simulação de Consórcio</h1>
+                    <p>${modeLabel} • ${tipoText}</p>
+                    <div class="admin-tag">
+                        ${adminLogoSrc ? `<img src="${adminLogoSrc}" style="height:60px;object-fit:contain">` : `<span style="font-weight:700;color:${adminColor}">${adminName}</span>`}
+                    </div>
                 </div>
-                <div class="r-val">R$ ${resultPrim}</div>
             </div>
 
-            <div class="r-row">
-                <div class="r-label">Parcelas Antes da Contemplação
-                    <span class="r-sub">Valor mensal até sair o lance</span>
+            <!-- TOP SUMMARY: CREDIT & TERM -->
+            <div class="summary-box">
+                <div class="s-item">
+                    <span class="lbl">Valor do Crédito</span>
+                    <span class="val">R$ ${credito}</span>
                 </div>
-                <div class="r-val">R$ ${resultDemais}</div>
-            </div>
-
-            <div class="highlight-liquid" style="margin:24px 0">
-                <span class="hl-label">Crédito Líquido</span>
-                <span class="hl-val">R$ ${resultCL}</span>
-            </div>
-
-            <div class="r-row">
-                <div class="r-label">Parcelas Pós-Contemplação
-                    <span class="r-sub">Novo valor após abater o lance</span>
+                <div class="s-item">
+                    <span class="lbl">Prazo do Plano</span>
+                    <span class="val">${prazo} Meses</span>
                 </div>
-                <div class="r-val">R$ ${resultPos}</div>
             </div>
-            
-            <div class="r-row" style="border:none">
-                <div class="r-label">Prazo Restante ao Contemplar</div>
-                <div class="r-val">${resultPrazo} Meses</div>
+
+            <div class="main-grid">
+                <!-- LEFT COLUMN: LANCE -->
+                <div>
+                    <div class="lance-card">
+                        <h3>Composição do Lance</h3>
+                        <div class="l-row"><span class="lbl">Embutido (${lanceEmb}%)</span><span class="val">R$ ${valorEmb}</span></div>
+                        <div class="l-row"><span class="lbl">Recurso Próprio (${lancePag}%)</span><span class="val">R$ ${valorPag}</span></div>
+                        <div class="l-row" style="margin-top:15px;padding-top:15px;border-top:1px solid rgba(255,255,255,0.2)">
+                            <span class="lbl" style="color:#c9a84c">Lance Total (${lanceTotal}%)</span>
+                            <span class="val" style="color:#c9a84c;font-size:16px">R$ ${valorTotal}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN: RESULTS -->
+                <div>
+                    <div class="card">
+                        <h3>Fluxo de Pagamento</h3>
+                        
+                        <div class="r-row">
+                            <div class="r-label">1ª Parcela (${primeirasLabel})
+                                <span class="r-sub">Entrada (Antecipada + Parcela)</span>
+                            </div>
+                            <div class="r-val">R$ ${resultPrim}</div>
+                        </div>
+
+                        <div class="r-row">
+                            <div class="r-label">Parcelas Antes da Contemplação
+                                <span class="r-sub">Valor mensal até sair o lance</span>
+                            </div>
+                            <div class="r-val">R$ ${resultDemais}</div>
+                        </div>
+
+                        <div class="highlight-liquid" style="margin:24px 0">
+                            <span class="hl-label">Crédito Líquido</span>
+                            <span class="hl-val">R$ ${resultCL}</span>
+                        </div>
+
+                        <div class="r-row">
+                            <div class="r-label">Parcelas Pós-Contemplação
+                                <span class="r-sub">Novo valor após abater o lance</span>
+                            </div>
+                            <div class="r-val">R$ ${resultPos}</div>
+                        </div>
+                        
+                        <div class="r-row" style="border:none">
+                            <div class="r-label">Prazo Restante ao Contemplar</div>
+                            <div class="r-val">${resultPrazo} Meses</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer">
+                <span>CR Invest - Consultoria Especializada</span>
+                <span>Gerado em ${dateStr}</span>
             </div>
         </div>
-    </div>
-</div>
+    `;
 
-<div class="footer">
-    <span>CR Invest - Consultoria Especializada</span>
-    <span>Gerado em ${dateStr}</span>
-</div>
+        // Configuration for html2pdf
+        const opt = {
+            margin: 0,
+            filename: 'Simulacao-CR-Invest.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
 
-</body></html>`;
-
-    const w = window.open('', '_blank');
-    w.document.write(html);
-    w.document.close();
-    setTimeout(() => { w.print(); }, 400);
+        // Use html2pdf
+        if (typeof html2pdf !== 'undefined') {
+            html2pdf().set(opt).from(element).save()
+                .then(() => {
+                    console.log('PDF gerado com sucesso!');
+                })
+                .catch(err => {
+                    console.error('Erro na geração do PDF (Promise):', err);
+                    alert('Erro ao gerar PDF: ' + (err.message || err));
+                });
+        } else {
+            alert('Erro: Biblioteca de PDF não carregada. Tente novamente em alguns segundos.');
+        }
+    } catch (e) {
+        console.error('Erro ao gerar PDF (Sync):', e);
+        alert('Erro ao gerar PDF (Sync): ' + e.message);
+    }
 }
 
 // ========================================

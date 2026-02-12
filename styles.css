@@ -64,21 +64,13 @@ body {
     align-items: center;
     padding: 0 32px;
     height: 100px;
-    background: #fff;
-    border-bottom: 1px solid var(--g200);
+    background: var(--gold-gradient);
+    border-bottom: 1px solid var(--white);
     position: relative;
     z-index: 10;
 }
 
-.header::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: var(--gold-gradient);
-}
+/* removed header::after */
 
 .header-center {
     flex: 1;
@@ -87,10 +79,13 @@ body {
     transform: translateX(20px);
 }
 
-.header-logo {
-    height: 80px;
-    width: auto;
-    object-fit: contain;
+.header-brand {
+    font-size: 34px;
+    font-weight: 800;
+    color: var(--black);
+    letter-spacing: 4px;
+    font-family: 'Inter', sans-serif;
+    text-transform: uppercase;
 }
 
 .header-actions {
@@ -102,8 +97,8 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: var(--gold);
-    border: 1px solid var(--gold);
+    background: var(--black);
+    border: 1px solid var(--black);
     color: #fff;
     padding: 9px 20px;
     border-radius: 6px;
@@ -114,14 +109,14 @@ body {
 }
 
 .btn-pdf:hover {
-    background: var(--gold-dark);
-    border-color: var(--gold-dark);
+    background: #333;
+    border-color: #333;
     color: #fff;
-    box-shadow: 0 4px 12px rgba(201, 168, 76, 0.4);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .btn-pdf svg {
-    stroke: var(--black);
+    stroke: #fff;
 }
 
 /* ── TITLE SECTION ── */
@@ -131,8 +126,8 @@ body {
     padding: 18px 32px 12px;
     background: var(--white);
     border-bottom: 1px solid var(--g200);
-    max-width: 1280px;
-    margin: 0 auto;
+    max-width: none;
+    margin: 0;
     width: 100%;
 }
 
@@ -262,9 +257,10 @@ body {
 }
 
 .field-label {
-    font-size: 13.5px;
+    font-size: 15px;
     font-weight: 500;
     color: var(--g500);
+    margin-left: 2px;
 }
 
 .info-pf {
@@ -279,7 +275,7 @@ body {
     border: 1px solid var(--g200);
     border-radius: var(--r);
     background: var(--white);
-    height: var(--h);
+    height: 50px;
     overflow: hidden;
     transition: border-color var(--t), box-shadow var(--t);
 }
@@ -291,10 +287,10 @@ body {
 
 .field-input input {
     flex: 1;
-    padding: 0 10px;
+    padding: 0 12px;
     border: none;
     outline: none;
-    font: 500 15.5px/1 'Inter', sans-serif;
+    font: 500 18px/1 'Inter', sans-serif;
     color: var(--black);
     background: transparent;
     height: 100%;
@@ -332,8 +328,8 @@ input.taxa-masked {
 
 .unit,
 .prefix {
-    padding: 0 10px;
-    font: 600 12.5px/1 'Inter', sans-serif;
+    padding: 0 14px;
+    font: 600 14px/1 'Inter', sans-serif;
     color: var(--g500);
     background: var(--g100);
     height: 100%;
@@ -463,13 +459,13 @@ input.taxa-masked {
 }
 
 .lance-lbl-red {
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 700;
     color: var(--gold-dark);
 }
 
 .lance-lbl-dark {
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 600;
     color: var(--black);
 }
@@ -751,4 +747,24 @@ input.taxa-masked {
     font-size: 14px;
     margin-top: 10px;
     display: none;
+}
+
+/* Floating Logo */
+.floating-logo {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 200px;
+    height: auto;
+    z-index: 1000;
+    opacity: 0.9;
+    pointer-events: none;
+}
+
+@media (max-width: 768px) {
+    .floating-logo {
+        width: 120px;
+        bottom: 16px;
+        right: 16px;
+    }
 }
