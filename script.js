@@ -301,7 +301,15 @@ function gerarPDF() {
         const tipo = document.getElementById('tipoBem');
         const tipoText = tipo.options[tipo.selectedIndex].text;
 
-        const modeLabel = currentMode === 'integral' ? 'Parcela Integral' : 'Parcela Reduzida';
+        let modeLabel = currentMode === 'integral' ? 'Parcela Integral' : 'Parcela Reduzida';
+        if (currentMode === 'reduzida') {
+            const valRed = parseFloat(document.getElementById('pctReducao').value) || 25;
+            // User requested to show the reduction percentage itself as "X% until contemplation"
+            // Example: "25% até a Contemplação" (meaning paying 75%? Or paying 25%? User wording is key.)
+            // The prompt says: "se a redução é de 25% ent quero que escreva 25% ate a contemplação"
+            // So we use 'valRed' directly.
+            modeLabel += ` (${valRed}% até Contemplação)`;
+        }
         const primeirasN = document.getElementById('primeirasN').value;
         const primeirasLabel = primeirasN === '1' ? 'À Vista' : primeirasN;
 
