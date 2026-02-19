@@ -314,11 +314,20 @@
     </div>
 
     <script>
+        // Check if already authenticated
+        (function () {
+            const saved = localStorage.getItem('cr_auth');
+            if (saved === 'vendas@2026') {
+                document.getElementById('loginOverlay').style.display = 'none';
+            }
+        })();
+
         function handleLogin(e) {
             e.preventDefault();
             const pass = document.getElementById('passwordInput').value;
             // Senha definida: vendas@2026
             if (pass === 'vendas@2026') {
+                localStorage.setItem('cr_auth', pass);
                 document.getElementById('loginOverlay').style.display = 'none';
             } else {
                 document.getElementById('loginError').style.display = 'block';

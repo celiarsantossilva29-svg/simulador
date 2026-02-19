@@ -211,12 +211,11 @@ function calcular() {
         valorTotalLance = lanceTotalPct * credito;
         valorEmbutido = lanceEmbutidoPct * credito;
     } else {
-        // Outros: lance sobre plano total
+        // Outros: lance total sobre plano total (varia com taxas)
         const planoTotal = parcelaMensal * prazo + antecipadaTotal;
         valorTotalLance = lanceTotalPct * planoTotal;
-        valorEmbutido = currentMode === 'integral'
-            ? lanceEmbutidoPct * credito
-            : lanceEmbutidoPct * planoTotal;
+        // Embutido SEMPRE sobre o crédito contratado (ex: 30% de 1M = 300k)
+        valorEmbutido = lanceEmbutidoPct * credito;
     }
 
     const valorAPagar = valorTotalLance - valorEmbutido;
