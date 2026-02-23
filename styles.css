@@ -63,9 +63,9 @@ body {
     justify-content: center;
     align-items: center;
     padding: 0 32px;
-    height: 100px;
-    background: var(--gold-gradient);
-    border-bottom: 1px solid var(--white);
+    height: 80px;
+    background: linear-gradient(135deg, #1a1a1a 0%, #111 50%, #1a1a1a 100%);
+    border-bottom: 2px solid var(--gold);
     position: relative;
     z-index: 10;
 }
@@ -100,8 +100,9 @@ body {
 }
 
 .header-brand-img {
-    height: 32px;
+    height: 36px;
     object-fit: contain;
+    filter: brightness(0) invert(0.62) sepia(1) saturate(2.5) hue-rotate(2deg) brightness(0.92);
 }
 
 .header-actions {
@@ -113,20 +114,19 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: var(--black);
-    border: 1px solid var(--black);
-    color: #fff;
-    padding: 9px 20px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 700;
+    background: transparent;
+    border: 1px solid #555;
+    color: #ccc;
+    padding: 6px 16px;
+    border-radius: 4px;
+    font: 500 12px/1 'Inter', sans-serif;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--t);
 }
 
 .btn-pdf:hover {
-    background: #333;
-    border-color: #333;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #999;
     color: #fff;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
