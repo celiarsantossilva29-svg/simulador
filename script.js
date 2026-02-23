@@ -117,6 +117,87 @@ function atualizarSeletorReducao() {
 }
 
 // ========================================
+// RICH TEXT EDITOR
+// ========================================
+
+function formatText(command, value) {
+    if (command === 'hilite') {
+        document.execCommand('hiliteColor', false, '#FFD54F');
+    } else {
+        document.execCommand(command, false, value || null);
+    }
+    // Keep focus on editor
+    document.getElementById('observacoes').focus();
+}
+
+// ========================================
+// STATE PERSISTENCE (localStorage)
+// ========================================
+
+function salvarEstado() {
+    const estado = {
+        mode: currentMode,
+        admin: document.getElementById('administradora').value,
+        tipoBem: document.getElementById('tipoBem').value,
+        taxaAdm: document.getElementById('taxaAdm').value,
+        fundoReserva: document.getElementById('fundoReserva').value,
+        seguro: document.getElementById('seguroPrestamista').value,
+        credito: document.getElementById('valorCredito').value,
+        prazo: document.getElementById('prazoGrupo').value,
+        reducao: document.querySelector('input[name="reducao"]:checked').value,
+        lanceEmbutido: document.getElementById('lanceEmbutido').value,
+        lancePagar: document.getElementById('lancePagar').value,
+        primeirasN: document.getElementById('primeirasN').value,
+        antecipada: document.getElementById('antecipada').value,
+        pctReducao: document.getElementById('pctReducao').value,
+        observacoes: document.getElementById('observacoes').innerHTML
+    };
+    localStorage.setItem('cr_simulacao', JSON.stringify(estado));
+}
+
+function restaurarEstado() {
+    const raw = localStorage.getItem('cr_simulacao');
+    if (!raw) return;
+    try {
+        const s = JSON.parse(raw);
+
+        // Mode
+        if (s.mode) {
+            currentMode = s.mode;
+            setMode(s.mode);
+        }
+
+        // Selects
+        if (s.admin) document.getElementById('administradora').value = s.admin;
+        if (s.tipoBem) document.getElementById('tipoBem').value = s.tipoBem;
+        if (s.primeirasN) document.getElementById('primeirasN').value = s.primeirasN;
+
+        // Numeric inputs
+        if (s.taxaAdm) document.getElementById('taxaAdm').value = s.taxaAdm;
+        if (s.fundoReserva) document.getElementById('fundoReserva').value = s.fundoReserva;
+        if (s.seguro) document.getElementById('seguroPrestamista').value = s.seguro;
+        if (s.credito) document.getElementById('valorCredito').value = s.credito;
+        if (s.prazo) document.getElementById('prazoGrupo').value = s.prazo;
+        if (s.lanceEmbutido) document.getElementById('lanceEmbutido').value = s.lanceEmbutido;
+        if (s.lancePagar) document.getElementById('lancePagar').value = s.lancePagar;
+        if (s.antecipada) document.getElementById('antecipada').value = s.antecipada;
+        if (s.pctReducao) document.getElementById('pctReducao').value = s.pctReducao;
+
+        // Radio
+        if (s.reducao) {
+            const radio = document.querySelector(`input[name="reducao"][value="${s.reducao}"]`);
+            if (radio) radio.checked = true;
+        }
+
+        // Textarea
+        if (s.observacoes) document.getElementById('observacoes').innerHTML = s.observacoes;
+
+    } catch (e) {
+        console.warn('Erro ao restaurar estado:', e);
+    }
+}
+
+// ========================================
 // FORMATTING UTILITIES
 // ========================================
 
@@ -273,6 +354,9 @@ function calcular() {
     document.getElementById('resultCredLiquido').value = formatCurrency(creditoLiquido);
     document.getElementById('resultPosContemp').value = formatCurrency(parcelaPosContemp);
     document.getElementById('resultPrazoRestante').value = prazoRestante;
+
+    // Save state to localStorage
+    salvarEstado();
 }
 
 // ========================================
@@ -289,7 +373,8 @@ function gerarPDF() {
         const admin = document.getElementById('administradora');
         const adminKey = admin.value;
         const adminName = admin.options[admin.selectedIndex].text;
-        const observacoes = document.getElementById('observacoes').value;
+        const observacoes = document.getElementById('observacoes').innerHTML.trim();
+        const hasObs = observacoes && observacoes !== '<br>' && observacoes !== '<br/>';
         const d = adminData[adminKey];
         // Use Base64 logos if available to avoid Tainted Canvas
         const adminLogoSrc = (d && d.logo && logoBase64[d.logo]) ? logoBase64[d.logo] : (d ? d.logo : '');
@@ -466,10 +551,10 @@ function gerarPDF() {
                 </div>
             </div>
             
-            ${observacoes ? `
+            ${hasObs ? `
             <div class="pdf-notes" style="margin-top:30px; padding-top:20px; border-top:1px solid #ddd;">
                 <h3 style="font-size:14px; font-weight:700; margin-bottom:8px; color:#111; text-transform:uppercase;">Observações</h3>
-                <p style="font-size:12px; line-height:1.5; color:#444; white-space:pre-wrap;">${observacoes}</p>
+                <div style="font-size:12px; line-height:1.5; color:#444;">${observacoes}</div>
             </div>
             ` : ''}
 
@@ -512,6 +597,7 @@ function gerarPDF() {
 // INIT
 // ========================================
 document.addEventListener('DOMContentLoaded', () => {
+    restaurarEstado();
     trocarAdministradora();
     calcular();
 });
