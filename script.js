@@ -368,14 +368,17 @@ function calcular() {
         } else {
             if (adminKey === 'porto_seguro') {
                 const limiteEmbutido = 0.30 * credito;
-                const valorLanceOfertado = lanceTotalPct * baseCalculo;
+                const desejoEmbutidoValor = lanceEmbutidoPct * baseCalculo;
+                const descontoEmbutido = Math.min(desejoEmbutidoValor, limiteEmbutido);
                 
-                // Embutido usa estritamente % em relação ao crédito (até 30%)
-                valorEmbutido = Math.min(lanceEmbutidoPct, 0.30) * credito;
+                // Exibição na tela (rigorosamente a % em relação ao crédito, respeitando a trava)
+                valorEmbutido = Math.min(lanceEmbutidoPct * credito, limiteEmbutido);
                 
-                // O resto sai do bolso do cliente apenas se ultrapassar o limite real da cota
-                valorAPagar = Math.max(valorLanceOfertado - limiteEmbutido, 0);
-                valorTotalLance = valorLanceOfertado;
+                const transbordoEmbutido = Math.max(desejoEmbutidoValor - descontoEmbutido, 0);
+                
+                // Componente a pagar inclui o que excedeu do embutido desejado + o explícito do lance a pagar
+                valorAPagar = (lancePagarPct * baseCalculo) + transbordoEmbutido;
+                valorTotalLance = descontoEmbutido + valorAPagar;
             } else {
                 const limiteEmbutido = 0.30 * credito;
                 valorEmbutido = Math.min(lanceEmbutidoPct * baseCalculo, limiteEmbutido);
@@ -389,10 +392,16 @@ function calcular() {
         valorAPagar = valorPagarDigitado;
 
         if (adminKey === 'porto_seguro') {
-            // Embutido base: usa estritamente o percentual digitado limitando a 30% do crédito
             const limiteEmbutido = 0.30 * credito;
-            const valorEmbutidoDesejado = lanceEmbutidoPct * credito;
-            valorEmbutido = Math.min(valorEmbutidoDesejado, limiteEmbutido);
+            const desejoEmbutidoValor = lanceEmbutidoPct * baseCalculo;
+            const descontoEmbutido = Math.min(desejoEmbutidoValor, limiteEmbutido);
+            
+            valorEmbutido = Math.min(lanceEmbutidoPct * credito, limiteEmbutido);
+            
+            const transbordoEmbutido = Math.max(desejoEmbutidoValor - descontoEmbutido, 0);
+            valorAPagar = Math.max(valorPagarDigitado, transbordoEmbutido);
+            
+            valorTotalLance = descontoEmbutido + valorAPagar;
         } else {
             // Embutido base: usa estritamente o percentual digitado (limitado a 30% do crédito)
             const limiteEmbutido = 0.30 * credito;
@@ -418,12 +427,8 @@ function calcular() {
     let descontoCreditoLiquido = valorEmbutido;
     if (adminKey === 'porto_seguro') {
         const limiteEmbutido = 0.30 * credito;
-        if (modoLancePagar === 'pct') {
-            const valorLanceOfertado = lanceTotalPct * baseCalculo;
-            descontoCreditoLiquido = Math.min(valorLanceOfertado, limiteEmbutido);
-        } else {
-            descontoCreditoLiquido = Math.max(valorEmbutido, Math.min(valorTotalLance, limiteEmbutido));
-        }
+        const desejoEmbutidoValor = lanceEmbutidoPct * baseCalculo;
+        descontoCreditoLiquido = Math.min(desejoEmbutidoValor, limiteEmbutido);
     }
     const creditoLiquido = credito - descontoCreditoLiquido;
 
