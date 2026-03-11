@@ -574,149 +574,225 @@ function gerarPDFSimuladorFrontend() {
         const now = new Date();
         const dateStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
+        const formatterBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+        const planoText = formatterBRL.format(baseCalcPdf);
+
         // Build the content for PDF
         const element = document.createElement('div');
         element.innerHTML = `
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-            *{margin:0;padding:0;box-sizing:border-box}
-            #pdf-content{font-family:'Inter',sans-serif;background:#fff;color:#111;padding:10mm 12mm 12mm;width:210mm;height:295mm;position:relative;box-sizing:border-box}
-            .pdf-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:14px;border-bottom:2px solid #c9a84c}
-            .pdf-header img{height:90px;object-fit:contain}
-            .pdf-info{text-align:right}
-            .pdf-info h1{font-size:22px;font-weight:800;color:#111;letter-spacing:-0.5px;margin-bottom:2px}
-            .pdf-info p{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:1px}
+            *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif}
+            #pdf-content{width:210mm;height:295mm;padding:12mm 15mm;background:#fff;position:relative}
+            
+            /* Header */
+            .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:30px}
+            .header-left img{height:80px;object-fit:contain}
+            .header-center{text-align:left;border-left:2px solid #c9a84c;padding-left:20px;flex:1;margin-left:30px}
+            .header-center h2{font-size:16px;font-weight:400;letter-spacing:4px;color:#111;margin-bottom:2px}
+            .header-center h1{font-size:30px;font-weight:800;color:#111;line-height:1}
+            .header-center .sub{font-size:12px;color:#888;letter-spacing:4px;text-transform:uppercase;margin-top:6px;display:inline-block;border-bottom:2px solid #c9a84c;padding-bottom:6px;width:80%}
+            .header-right{text-align:right}
+            .header-right span{font-size:9px;color:#aaa;text-transform:uppercase;margin-bottom:5px;display:block}
+            .header-right img{height:55px;max-width:140px;object-fit:contain}
 
-            /* MAIN GRID */
-            .main-grid{display:grid;grid-template-columns:1.2fr 1.8fr;gap:28px}
+            /* Top Banner */
+            .top-banner{display:flex;height:100px;margin-bottom:25px}
+            .top-left{background:#c9a84c;width:45%;padding:20px 25px;display:flex;flex-direction:column;justify-content:center}
+            .top-left .lbl{font-size:11px;font-weight:700;color:#1f1f23;text-transform:uppercase;line-height:1.2;margin-bottom:8px}
+            .top-left .val{font-size:28px;font-weight:800;color:#1f1f23}
+            .top-right{background:#fdfcf8;width:55%;display:flex;align-items:center;justify-content:space-around;padding:0 15px}
+            .tr-item{text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px}
+            .tr-item svg{width:26px;height:26px;color:#c9a84c;stroke-width:1.5}
+            .tr-item .lbl{font-size:9px;color:#999;text-transform:uppercase;font-weight:500}
+            .tr-item .val{font-size:12px;font-weight:800;color:#111}
 
-            /* CARDS */
-            .card{margin-bottom:14px}
-            .card h3{font-size:11px;font-weight:700;color:#c9a84c;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
-            .card h3::after{content:'';flex:1;height:1px;background:#eee}
+            /* Columns */
+            .cols{display:flex;gap:20px;margin-bottom:25px}
+            .col{flex:1;background:#f5f5f5;padding:20px;min-height:300px}
+            .col-title{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:800;color:#111;text-transform:uppercase;margin-bottom:20px}
+            .col-title svg{width:20px;height:20px;color:#c9a84c}
 
-            /* SUMMARY BOX (CREDIT + TERM) */
-            .summary-box{display:grid;grid-template-columns:1fr 1fr;gap:14px;background:#f9f9f9;padding:16px;border-radius:8px;margin-bottom:22px;border:1px solid #eee}
-            .s-item .lbl{display:block;font-size:10px;color:#888;margin-bottom:3px;text-transform:uppercase}
-            .s-item .val{display:block;font-size:22px;font-weight:700;color:#111}
+            .stat-box{background:#fff;padding:12px 15px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;border:1px solid #efefef}
+            .sb-left{display:flex;align-items:center;gap:15px}
+            .sb-icon{width:40px;height:40px;border-radius:50%;border:1px solid #e0cd9a;display:flex;align-items:center;justify-content:center;background:#fffaf0}
+            .sb-icon svg{width:20px;height:20px;color:#c9a84c;stroke-width:1.5}
+            .sb-info{display:flex;flex-direction:column}
+            .sb-lbl{font-size:9px;font-weight:600;color:#888;text-transform:uppercase;margin-bottom:3px}
+            .sb-sub{font-size:8px;color:#aaa;text-transform:uppercase}
+            .sb-val{font-size:14px;font-weight:800;color:#111}
 
-            /* LANCE (LIGHT) */
-            .lance-card{background:#fff;color:#111;padding:20px;border-radius:10px;border:1px solid #ddd}
-            .lance-card h3{color:#c9a84c;border:none;margin-bottom:12px}
-            .lance-card h3::after{background:#eee}
-            .l-row{display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;border-bottom:1px solid #f0f0f0;padding-bottom:8px}
-            .l-row:last-child{border:none;margin:0;padding:0}
-            .l-row .lbl{color:#666}
-            .l-row .val{font-weight:600;color:#111}
+            .total-box{margin-top:15px;background:linear-gradient(110deg, #1f1f23 58%, #c9a84c 58%);display:flex;align-items:center;justify-content:space-between;padding:20px 25px}
+            .total-lbl{color:#c9a84c;font-size:11px;font-weight:800;text-transform:uppercase}
+            .total-val{color:#fff;font-size:24px;font-weight:800}
 
-            /* RESULTS */
-            .result-card{background:#fff}
-            .r-row{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #f0f0f0}
-            .r-row:last-child{border:none}
-            .r-label{font-size:13px;color:#666;max-width:60%}
-            .r-val{font-size:18px;font-weight:700;color:#111;text-align:right}
-            .r-sub{font-size:10px;color:#999;display:block;margin-top:1px}
+            /* Rec Banner */
+            .rec-banner{background:#fdfcf8;border:1px solid #eee;display:flex;align-items:center;padding:20px;position:relative}
+            .rec-border{position:absolute;left:0;top:0;bottom:0;width:12px;background:#c9a84c}
+            .rec-icon{margin-left:25px;margin-right:25px}
+            .rec-icon svg{width:36px;height:36px;color:#c9a84c;stroke-width:1.5}
+            .rec-content h3{font-size:11px;font-weight:800;color:#111;margin-bottom:6px;text-transform:uppercase}
+            .rec-content p{font-size:12px;color:#444;line-height:1.5;font-weight:500}
 
-            /* HIGHLIGHT LIQUID */
-            .highlight-liquid{background:linear-gradient(135deg, rgba(201,168,76,0.15) 0%, rgba(201,168,76,0.05) 100%);border:1px solid #c9a84c;padding:18px;border-radius:8px;display:flex;justify-content:space-between;align-items:center}
-            .hl-label{font-size:14px;font-weight:700;color:#8a7333;text-transform:uppercase}
-            .hl-val{font-size:26px;font-weight:800;color:#111}
-
-            .admin-tag{display:inline-block;margin-top:4px}
-
-            .footer{position:absolute;bottom:3mm;left:12mm;right:12mm;padding-top:6px;border-top:1px solid #eee;font-size:9px;color:#bbb;display:flex;justify-content:space-between}
+            /* Footer */
+            .footer{position:absolute;bottom:12mm;left:15mm;right:15mm;padding-top:10px;border-top:2px solid #c9a84c;font-size:9px;color:#888;display:flex;justify-content:space-between;text-transform:uppercase;letter-spacing:1px}
         </style>
-        
+
         <div id="pdf-content">
-            <div class="pdf-header">
-                <img src="${headerLogoSrc}" alt="CR Invest">
-                <div class="pdf-info">
-                    <h1>Simulação de Consórcio</h1>
-                    <p>${modeLabel} • ${tipoText}</p>
-                    <div class="admin-tag">
-                        ${adminLogoSrc ? `<img src="${adminLogoSrc}" style="height:40px;object-fit:contain">` : `<span style="font-weight:700;color:${adminColor}">${adminName}</span>`}
-                    </div>
+            <div class="header">
+                <div class="header-left">
+                    <img src="${headerLogoSrc}">
+                </div>
+                <div class="header-center">
+                    <h2>SIMULAÇÃO</h2>
+                    <h1>ESTRATÉGICA</h1>
+                    <span class="sub">DE CONSÓRCIO</span>
+                </div>
+                <div class="header-right">
+                    <span>ADMINISTRADORA</span>
+                    ${adminLogoSrc ? `<img src="${adminLogoSrc}">` : `<span style="font-weight:800;color:#111;font-size:16px">${adminName}</span>`}
                 </div>
             </div>
 
-            <!-- TOP SUMMARY: CREDIT & TERM -->
-            <div class="summary-box">
-                <div class="s-item">
-                    <span class="lbl">Valor do Crédito</span>
+            <div class="top-banner">
+                <div class="top-left">
+                    <span class="lbl">CRÉDITO DISPONÍVEL<br>PARA AQUISIÇÃO</span>
                     <span class="val">R$ ${credito}</span>
                 </div>
-                <div class="s-item">
-                    <span class="lbl">Prazo do Plano</span>
-                    <span class="val">${prazo} Meses</span>
-                </div>
-            </div>
-
-            <div class="main-grid">
-                <!-- LEFT COLUMN: LANCE -->
-                <div>
-                    <div class="lance-card">
-                        <h3>Composição do Lance</h3>
-                        <div class="l-row"><span class="lbl">Embutido (${efetivoEmbPctStr}%)</span><span class="val">R$ ${valorEmb}</span></div>
-                        <div class="l-row"><span class="lbl">Recurso Próprio (${efetivoPagPctStr}%)</span><span class="val">R$ ${valorPag}</span></div>
-                        <div class="l-row" style="margin-top:15px;padding-top:15px;border-top:1px solid rgba(255,255,255,0.2)">
-                            <span class="lbl" style="color:#c9a84c">Lance Total (${lanceTotal}%)</span>
-                            <span class="val" style="color:#c9a84c;font-size:16px">R$ ${valorTotal}</span>
-                        </div>
+                <div class="top-right">
+                    <div class="tr-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                        <span class="lbl">PLANO</span>
+                        <span class="val">${planoText}</span>
                     </div>
-                </div>
-
-                <!-- RIGHT COLUMN: RESULTS -->
-                <div>
-                    <div class="card">
-                        <h3>Fluxo de Pagamento</h3>
-                        
-                        <div class="r-row">
-                            <div class="r-label">1ª Parcela (${primeirasLabel})
-                                <span class="r-sub">Entrada (Antecipada + Parcela)</span>
-                            </div>
-                            <div class="r-val">R$ ${resultPrim}</div>
-                        </div>
-
-                        <div class="r-row">
-                            <div class="r-label">Parcelas Antes da Contemplação
-                                <span class="r-sub">Valor mensal até sair o lance</span>
-                            </div>
-                            <div class="r-val">R$ ${resultDemais}</div>
-                        </div>
-
-                        <div class="highlight-liquid" style="margin:14px 0">
-                            <span class="hl-label">Crédito Líquido</span>
-                            <span class="hl-val">R$ ${resultCL}</span>
-                        </div>
-
-                        <div class="r-row">
-                            <div class="r-label">Parcelas Pós-Contemplação
-                                <span class="r-sub">Novo valor após abater o lance</span>
-                            </div>
-                            <div class="r-val">R$ ${resultPos}</div>
-                        </div>
-                        
-                        <div class="r-row" style="border:none">
-                            <div class="r-label">Prazo Restante ao Contemplar</div>
-                            <div class="r-val">${resultPrazo} Meses</div>
-                        </div>
+                    <div class="tr-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        <span class="lbl">PRAZO</span>
+                        <span class="val">${prazo} MESES</span>
+                    </div>
+                    <div class="tr-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+                        <span class="lbl">ESTRATÉGIA</span>
+                        <span class="val">${lanceTotal}% DE LANCE</span>
                     </div>
                 </div>
             </div>
-            
-            ${hasObs ? `
-            <div class="pdf-notes" style="margin-top:24px; padding-top:16px; border-top:1px solid #ddd;">
-                <h3 style="font-size:13px; font-weight:700; margin-bottom:8px; color:#111; text-transform:uppercase;">Observações</h3>
-                <div style="font-size:12px; line-height:1.5; color:#444;">${observacoes}</div>
+
+            <div class="cols">
+                <!-- ESTRATÉGIA DE LANCE -->
+                <div class="col">
+                    <div class="col-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><circle cx="10" cy="13" r="2"></circle><path d="M12 13h4"></path></svg>
+                        ESTRATÉGIA DE LANCE
+                    </div>
+
+                    <div class="stat-box">
+                        <div class="sb-left">
+                            <div class="sb-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                            </div>
+                            <div class="sb-info">
+                                <span class="sb-lbl">LANCE EMBUTIDO</span>
+                            </div>
+                        </div>
+                        <span class="sb-val">R$ ${valorEmb}</span>
+                    </div>
+
+                    <div class="stat-box">
+                        <div class="sb-left">
+                            <div class="sb-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                            </div>
+                            <div class="sb-info">
+                                <span class="sb-lbl">RECURSO PRÓPRIO</span>
+                            </div>
+                        </div>
+                        <span class="sb-val">R$ ${valorPag}</span>
+                    </div>
+
+                    <div class="total-box">
+                        <span class="total-lbl">LANCE TOTAL</span>
+                        <span class="total-val">${lanceTotal}%</span>
+                    </div>
+                </div>
+
+                <!-- FLUXO FINANCEIRO -->
+                <div class="col">
+                    <div class="col-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                        FLUXO FINANCEIRO
+                    </div>
+                    
+                    <div class="stat-box">
+                        <div class="sb-left">
+                            <div class="sb-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+                            </div>
+                            <div class="sb-info">
+                                <span class="sb-lbl">1ª PARCELA <span class="sb-sub" style="display:inline">(ENTRADA)</span></span>
+                                
+                            </div>
+                        </div>
+                        <span class="sb-val">R$ ${resultPrim}</span>
+                    </div>
+
+                    <div class="stat-box">
+                        <div class="sb-left">
+                            <div class="sb-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                            </div>
+                            <div class="sb-info">
+                                <span class="sb-lbl">PARCELAS ANTES<br>DA CONTEMPLAÇÃO</span>
+                            </div>
+                        </div>
+                        <span class="sb-val">R$ ${resultDemais}</span>
+                    </div>
+
+                    <div class="stat-box">
+                        <div class="sb-left">
+                            <div class="sb-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                            </div>
+                            <div class="sb-info">
+                                <span class="sb-lbl">PARCELAS APÓS<br>CONTEMPLAÇÃO</span>
+                            </div>
+                        </div>
+                        <span class="sb-val">R$ ${resultPos}</span>
+                    </div>
+
+                    <div class="stat-box" style="margin-bottom:0">
+                        <div class="sb-left">
+                            <div class="sb-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            </div>
+                            <div class="sb-info">
+                                <span class="sb-lbl">PRAZO RESTANTE</span>
+                            </div>
+                        </div>
+                        <span class="sb-val">${resultPrazo} MESES</span>
+                    </div>
+                </div>
             </div>
-            ` : ''}
+
+            <div class="rec-banner">
+                <div class="rec-border"></div>
+                <div class="rec-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21h6"></path><path d="M12 21v-4"></path><path d="M12 4V2"></path><path d="M4 12H2"></path><path d="M22 12h-2"></path><path d="M18.36 5.64l-1.41 1.41"></path><path d="M7.05 18.36l-1.41 1.41"></path><path d="M7.05 5.64L5.64 7.05"></path><path d="M18.36 18.36l1.41 1.41"></path><path d="M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"></path></svg>
+                </div>
+                <div class="rec-content">
+                    <h3>ESTRATÉGIA RECOMENDADA PELA CR INVEST</h3>
+                    <p>Com esta estrutura de lance, você acessa um crédito líquido de R$ ${resultCL} mantendo parcelas estruturadas antes e após a contemplação, sem juros bancários.</p>
+                </div>
+            </div>
 
             <div class="footer">
-                <span>CR Invest - Consultoria Especializada</span>
-                <span>Gerado em ${dateStr}</span>
+                <span>Data da simulação: ${dateStr.split(' ')[0]}</span>
+                <span>SEGURANÇA . PLANEJAMENTO . INTELIGÊNCIA . PATRIMONIAL</span>
+                <span>CR INVEST CONSULTORIA</span>
             </div>
         </div>
     `;
+
 
         // Configuration for html2pdf
         const opt = {
