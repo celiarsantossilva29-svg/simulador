@@ -503,7 +503,7 @@ function calcular() {
 // PDF GENERATION
 // ========================================
 
-function gerarPDF() {
+function gerarPDFSimuladorFrontend() {
     if (typeof html2pdf === 'undefined') {
         alert('Carregando biblioteca PDF... Aguarde um instante e tente novamente.');
         // Retry logic could go here, but alert is enough for now.
@@ -513,7 +513,8 @@ function gerarPDF() {
         const admin = document.getElementById('administradora');
         const adminKey = admin.value;
         const adminName = admin.options[admin.selectedIndex].text;
-        const observacoes = document.getElementById('observacoes').innerHTML.trim();
+        const obsEl = document.getElementById('observacoes');
+        const observacoes = obsEl ? obsEl.innerHTML.trim() : '';
         const hasObs = observacoes && observacoes !== '<br>' && observacoes !== '<br/>';
         const d = adminData[adminKey];
         // Use Base64 logos if available to avoid Tainted Canvas
@@ -1309,10 +1310,10 @@ window.gerarPDF = function() {
     const isSimuladorActive = simuladorTab && simuladorTab.classList.contains('active');
     
     if (isSimuladorActive) {
-        if (typeof gerarPDFSimulador === 'function') {
-            gerarPDFSimulador();
+        if (typeof gerarPDFSimuladorFrontend === 'function') {
+            gerarPDFSimuladorFrontend();
         } else {
-            console.error('gerarPDFSimulador não está definido. Verifique pdf_simulador.js');
+            console.error('gerarPDFSimuladorFrontend não está definido na seção frontend de script.js');
         }
     } else {
         if (typeof gerarPDFComparativo === 'function') {
