@@ -366,35 +366,48 @@ function calcular() {
             valorEmbutido = 0;
             valorAPagar = 0;
         } else {
-            // O lance ofertado total (%) é SEMPRE calculado sobre o valor do plano (baseCalculo)
-            valorTotalLance = lanceTotalPct * baseCalculo;
-
-            // O embutido pode absorver até 30% do VALOR DO CRÉDITO
-            const limiteEmbutido = 0.30 * credito;
-
-            // Se o lance total for menor ou igual ao limite de embutido, não paga nada do bolso.
-            // Se ultrapassar os 30%, o embutido trava em 30% e a diferença vai pro bolso.
-            valorEmbutido = Math.min(valorTotalLance, limiteEmbutido);
-            valorAPagar = valorTotalLance - valorEmbutido;
+            if (adminKey === 'porto_seguro') {
+                const limiteEmbutido = 0.30 * credito;
+                const valorLanceOfertado = lanceTotalPct * baseCalculo;
+                
+                // Embutido usa estritamente % em relação ao crédito (até 30%)
+                valorEmbutido = Math.min(lanceEmbutidoPct, 0.30) * credito;
+                
+                // O resto sai do bolso do cliente apenas se ultrapassar o limite real da cota
+                valorAPagar = Math.max(valorLanceOfertado - limiteEmbutido, 0);
+                valorTotalLance = valorLanceOfertado;
+            } else {
+                const limiteEmbutido = 0.30 * credito;
+                valorEmbutido = Math.min(lanceEmbutidoPct * baseCalculo, limiteEmbutido);
+                valorAPagar = lancePagarPct * baseCalculo;
+                valorTotalLance = valorEmbutido + valorAPagar;
+            }
         }
     } else {
         // Modo Reverso: Usuário digitou $ no campo a Pagar
         const valorPagarDigitado = parseCurrency(document.getElementById('valorPagar').value);
         valorAPagar = valorPagarDigitado;
 
-        // Embutido base: até 30% do crédito correspondente à % inputada
-        const limiteEmbutido = 0.30 * credito;
-        let embutidoDesejado = lanceEmbutidoPct * credito;
-        if (embutidoDesejado > limiteEmbutido) embutidoDesejado = limiteEmbutido;
+        if (adminKey === 'porto_seguro') {
+            // Embutido base: usa estritamente o percentual digitado limitando a 30% do crédito
+            const limiteEmbutido = 0.30 * credito;
+            const valorEmbutidoDesejado = lanceEmbutidoPct * credito;
+            valorEmbutido = Math.min(valorEmbutidoDesejado, limiteEmbutido);
+        } else {
+            // Embutido base: usa estritamente o percentual digitado (limitado a 30% do crédito)
+            const limiteEmbutido = 0.30 * credito;
+            let embutidoDesejado = lanceEmbutidoPct * baseCalculo;
+            if (embutidoDesejado > limiteEmbutido) embutidoDesejado = limiteEmbutido;
+            valorEmbutido = embutidoDesejado;
+        }
 
-        valorEmbutido = embutidoDesejado;
         valorTotalLance = valorAPagar + valorEmbutido;
 
         // Atualiza campos inativos (%)
         let pctCalculada = valorTotalLance / baseCalculo;
         if (pctCalculada < 0) pctCalculada = 0;
 
-        let pagarPctCalc = pctCalculada - (valorEmbutido / credito);
+        let pagarPctCalc = pctCalculada - (valorEmbutido / baseCalculo);
         if (pagarPctCalc < 0) pagarPctCalc = 0;
         document.getElementById('lancePagar').value = (pagarPctCalc * 100).toFixed(2);
     }
@@ -402,7 +415,17 @@ function calcular() {
     // ========================================
     // CRÉDITO LÍQUIDO
     // ========================================
-    const creditoLiquido = credito - valorEmbutido;
+    let descontoCreditoLiquido = valorEmbutido;
+    if (adminKey === 'porto_seguro') {
+        const limiteEmbutido = 0.30 * credito;
+        if (modoLancePagar === 'pct') {
+            const valorLanceOfertado = lanceTotalPct * baseCalculo;
+            descontoCreditoLiquido = Math.min(valorLanceOfertado, limiteEmbutido);
+        } else {
+            descontoCreditoLiquido = Math.max(valorEmbutido, Math.min(valorTotalLance, limiteEmbutido));
+        }
+    }
+    const creditoLiquido = credito - descontoCreditoLiquido;
 
     // ========================================
     // PÓS-CONTEMPLAÇÃO (modelo padrão para todas as admins)
@@ -451,8 +474,9 @@ function calcular() {
     // atualizamos apenas o display readonly 'lanceTotal' e os 'valores em R$' 
     // O usuário entende que o Embutido dele foi convertido em Valor na caixa abaixo.
 
-    // We already have `lanceTotalPct` from the user inputs.
-    document.getElementById('lanceTotal').value = (lanceTotalPct * 100).toFixed(2).replace('.', ',');
+    // We compute the effective total percentage (as the embutido could be capped)
+    let efetivoTotalPct = baseCalculo > 0 ? (valorTotalLance / baseCalculo) : 0;
+    document.getElementById('lanceTotal').value = (efetivoTotalPct * 100).toFixed(2).replace('.', ',');
     document.getElementById('valorEmbutido').value = formatCurrency(valorEmbutido);
     document.getElementById('valorPagar').value = formatCurrency(valorAPagar);
     document.getElementById('valorTotal').value = formatCurrency(valorTotalLance);
@@ -527,6 +551,18 @@ function gerarPDF() {
         const valorPag = document.getElementById('valorPagar').value;
         const lanceTotal = document.getElementById('lanceTotal').value;
         const valorTotal = document.getElementById('valorTotal').value;
+
+        // Calcule as porcentagens efetivas para o PDF baseadas no baseCalculo real
+        const adminKeyForPdf = document.getElementById('administradora').value;
+        const isEmbraconPdf = adminKeyForPdf === 'embracon';
+        const creditoFloat = parseCurrency(credito);
+        const baseCalcPdf = isEmbraconPdf ? creditoFloat : (creditoFloat * (1 + (parseFloat(taxaAdm) || 0)/100 + (parseFloat(fundoReserva) || 0)/100 + (parseFloat(seguroVal) || 0)/100));
+        
+        const valEmbNum = parseCurrency(valorEmb);
+        const valPagNum = parseCurrency(valorPag);
+        
+        const efetivoEmbPctStr = baseCalcPdf > 0 ? (valEmbNum / baseCalcPdf * 100).toFixed(2).replace('.', ',') : "0,00";
+        const efetivoPagPctStr = baseCalcPdf > 0 ? (valPagNum / baseCalcPdf * 100).toFixed(2).replace('.', ',') : "0,00";
 
         const resultPrim = document.getElementById('resultPrimeiras').value;
         const resultDemais = document.getElementById('resultDemais').value;
@@ -619,8 +655,8 @@ function gerarPDF() {
                 <div>
                     <div class="lance-card">
                         <h3>Composição do Lance</h3>
-                        <div class="l-row"><span class="lbl">Embutido (${lanceEmb}%)</span><span class="val">R$ ${valorEmb}</span></div>
-                        <div class="l-row"><span class="lbl">Recurso Próprio (${lancePag}%)</span><span class="val">R$ ${valorPag}</span></div>
+                        <div class="l-row"><span class="lbl">Embutido (${efetivoEmbPctStr}%)</span><span class="val">R$ ${valorEmb}</span></div>
+                        <div class="l-row"><span class="lbl">Recurso Próprio (${efetivoPagPctStr}%)</span><span class="val">R$ ${valorPag}</span></div>
                         <div class="l-row" style="margin-top:15px;padding-top:15px;border-top:1px solid rgba(255,255,255,0.2)">
                             <span class="lbl" style="color:#c9a84c">Lance Total (${lanceTotal}%)</span>
                             <span class="val" style="color:#c9a84c;font-size:16px">R$ ${valorTotal}</span>
