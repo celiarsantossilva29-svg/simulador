@@ -162,6 +162,9 @@ function restaurarEstado() {
     try {
         const s = JSON.parse(raw);
 
+        // Apenas restaura Modo, Administradora, Tipo Bem, e as Taxas.
+        // Valores como crédito e observações agora vêm em branco.
+
         // Mode
         if (s.mode) {
             currentMode = s.mode;
@@ -173,30 +176,23 @@ function restaurarEstado() {
         if (s.tipoBem) document.getElementById('tipoBem').value = s.tipoBem;
         if (s.primeirasN) document.getElementById('primeirasN').value = s.primeirasN;
 
-        // Numeric inputs
+        // Numeric inputs (Taxas e Valores persistentes)
         if (s.taxaAdm) document.getElementById('taxaAdm').value = s.taxaAdm;
         if (s.fundoReserva) document.getElementById('fundoReserva').value = s.fundoReserva;
         if (s.seguro) document.getElementById('seguroPrestamista').value = s.seguro;
         if (s.credito) document.getElementById('valorCredito').value = s.credito;
         if (s.prazo) document.getElementById('prazoGrupo').value = s.prazo;
-        if (s.lanceEmbutido) document.getElementById('lanceEmbutido').value = s.lanceEmbutido;
-        if (s.lancePagar) document.getElementById('lancePagar').value = s.lancePagar;
-        if (s.valorPagar) document.getElementById('valorPagar').value = s.valorPagar;
+
         if (s.modoLance) {
             modoLancePagar = s.modoLance;
             atualizarVisualModoLance();
         }
-        if (s.antecipada) document.getElementById('antecipada').value = s.antecipada;
-        if (s.pctReducao) document.getElementById('pctReducao').value = s.pctReducao;
 
         // Radio
         if (s.reducao) {
             const radio = document.querySelector(`input[name="reducao"][value="${s.reducao}"]`);
             if (radio) radio.checked = true;
         }
-
-        // Textarea
-        if (s.observacoes) document.getElementById('observacoes').innerHTML = s.observacoes;
 
     } catch (e) {
         console.warn('Erro ao restaurar estado:', e);
@@ -583,209 +579,259 @@ function gerarPDFSimuladorFrontend() {
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
             *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif}
-            #pdf-content{width:210mm;height:295mm;padding:12mm 15mm;background:#fff;position:relative}
+            #pdf-content{width:210mm;height:295mm;padding:15mm 20mm;background:#fff;position:relative}
             
             /* Header */
-            .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:30px}
-            .header-left img{height:80px;object-fit:contain}
-            .header-center{text-align:left;border-left:2px solid #c9a84c;padding-left:20px;flex:1;margin-left:30px}
-            .header-center h2{font-size:16px;font-weight:400;letter-spacing:4px;color:#111;margin-bottom:2px}
-            .header-center h1{font-size:30px;font-weight:800;color:#111;line-height:1}
-            .header-center .sub{font-size:12px;color:#888;letter-spacing:4px;text-transform:uppercase;margin-top:6px;display:inline-block;border-bottom:2px solid #c9a84c;padding-bottom:6px;width:80%}
-            .header-right{text-align:right}
-            .header-right span{font-size:9px;color:#aaa;text-transform:uppercase;margin-bottom:5px;display:block}
-            .header-right img{height:55px;max-width:140px;object-fit:contain}
+            .pdf-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:30px;background:#fff!important}
+            .pdf-header-left{display:flex;align-items:center;}
+            .pdf-header-left img{height:90px;object-fit:contain;background:#fff!important}
+            .pdf-header-center{text-align:left;border-left:1px solid #d4af37;padding-left:25px;flex:1;margin-left:35px;display:flex;flex-direction:column;justify-content:center;}
+            .pdf-header-center h2{font-size:16px;font-weight:400;letter-spacing:7px;color:#333;margin-bottom:5px}
+            .pdf-header-center h1{font-size:32px;font-weight:800;color:#111;line-height:1.1;letter-spacing:1px;margin-bottom:2px;}
+            .pdf-header-center .pdf-sub{font-size:13px;color:#999;letter-spacing:5px;text-transform:uppercase;margin-top:2px;display:inline-block;border-bottom:1px solid #d4af37;padding-bottom:5px;width:80%}
+            .pdf-header-right{text-align:right;background:#fff!important;display:flex;flex-direction:column;align-items:flex-end;}
+            .pdf-header-right span{font-size:8px;color:#999;text-transform:uppercase;margin-bottom:8px;letter-spacing:1px;display:block}
+            .pdf-header-right img{height:45px;max-width:140px;object-fit:contain;background:#fff!important}
 
             /* Top Banner */
-            .top-banner{display:flex;height:100px;margin-bottom:25px}
-            .top-left{background:#c9a84c;width:45%;padding:20px 25px;display:flex;flex-direction:column;justify-content:center}
-            .top-left .lbl{font-size:11px;font-weight:700;color:#1f1f23;text-transform:uppercase;line-height:1.2;margin-bottom:8px}
-            .top-left .val{font-size:28px;font-weight:800;color:#1f1f23}
-            .top-right{background:#fdfcf8;width:55%;display:flex;align-items:center;justify-content:space-around;padding:0 15px}
-            .tr-item{text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px}
-            .tr-item svg{width:26px;height:26px;color:#c9a84c;stroke-width:1.5}
-            .tr-item .lbl{font-size:9px;color:#999;text-transform:uppercase;font-weight:500}
-            .tr-item .val{font-size:12px;font-weight:800;color:#111}
+            .pdf-top-banner{display:flex;height:120px;margin-bottom:30px;background:linear-gradient(105deg, #d4af37 46%, #f8f8f8 46.2%);}
+            .pdf-top-left{width:45%;padding:25px 30px;display:flex;flex-direction:column;justify-content:center}
+            .pdf-top-left .pdf-lbl{font-size:11px;font-weight:700;color:#222;text-transform:uppercase;line-height:1.2;margin-bottom:5px}
+            .pdf-top-left .pdf-val-wrap{display:flex;align-items:baseline;gap:6px;}
+            .pdf-top-left .pdf-val-curr{font-size:18px;font-weight:800;color:#222;}
+            .pdf-top-left .pdf-val-num{font-size:30px;font-weight:800;color:#222;letter-spacing:-0.5px;}
+            .pdf-top-right{width:55%;display:flex;align-items:center;justify-content:space-around;padding:0 15px 0 32px}
+            .pdf-tr-item{text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px; width:33%;}
+            .pdf-tr-item svg{color:#d4af37;stroke-width:1.2;stroke:#d4af37;}
+            .pdf-tr-item .pdf-lbl{font-size:8px;color:#999;text-transform:uppercase;font-weight:600;letter-spacing:1px;}
+            .pdf-tr-item .pdf-val{font-size:12px;font-weight:800;color:#222}
+            .pdf-tr-item-divider { width: 1px; height: 50px; background-color: #ddd; }
 
             /* Columns */
-            .cols{display:flex;gap:20px;margin-bottom:25px}
-            .col{flex:1;background:#f5f5f5;padding:20px;min-height:300px}
-            .col-title{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:800;color:#111;text-transform:uppercase;margin-bottom:20px}
-            .col-title svg{width:20px;height:20px;color:#c9a84c}
+            .pdf-cols{display:flex;justify-content:space-between;margin-bottom:15px}
+            .pdf-col{width:47.5%;background:#f8f8f8;padding:25px;min-height:300px}
+            .pdf-col-title{display:flex;align-items:center;gap:12px;font-size:14px;font-weight:800;color:#222;text-transform:uppercase;margin-bottom:25px}
+            .pdf-col-title svg{color:#d4af37}
 
-            .stat-box{background:#fff;padding:12px 15px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;border:1px solid #efefef}
-            .sb-left{display:flex;align-items:center;gap:15px}
-            .sb-icon{width:40px;height:40px;border-radius:50%;border:1px solid #e0cd9a;display:flex;align-items:center;justify-content:center;background:#fffaf0}
-            .sb-icon svg{width:20px;height:20px;color:#c9a84c;stroke-width:1.5}
-            .sb-info{display:flex;flex-direction:column}
-            .sb-lbl{font-size:9px;font-weight:600;color:#888;text-transform:uppercase;margin-bottom:3px}
-            .sb-sub{font-size:8px;color:#aaa;text-transform:uppercase}
-            .sb-val{font-size:14px;font-weight:800;color:#111}
+            .pdf-stat-box{background:#fff;padding:15px 20px;margin-bottom:15px;display:flex;align-items:center;justify-content:space-between;box-shadow: 0 2px 5px rgba(0,0,0,0.02); height: 85px;}
+            .pdf-sb-left{display:flex;align-items:center;gap:12px;width:60%;}
+            .pdf-sb-icon{width:45px;height:45px;border-radius:50%;border:1px solid #eee;display:flex;align-items:center;justify-content:center;background:#fff;flex-shrink:0;}
+            .pdf-sb-icon svg{color:#d4af37!important;stroke:#d4af37!important;stroke-width:1.2px!important;fill:none!important}
+            .pdf-sb-info{display:flex;flex-direction:column;flex:1;}
+            .pdf-sb-lbl{font-size:7.5px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:2px;letter-spacing:0.5px;line-height:1.2;}
+            .pdf-sb-sub{font-size:6px;color:#aaa;text-transform:uppercase}
+            
+            .pdf-sb-val-wrap{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:1px;width:40%;flex-shrink:0;}
+            .pdf-sb-curr{font-size:11.5px;font-weight:800;color:#111;}
+            .pdf-sb-val{font-size:17px;font-weight:800;color:#111;text-align:right;letter-spacing:-0.5px;}
 
-            .total-box{margin-top:15px;background:linear-gradient(110deg, #1f1f23 58%, #c9a84c 58%);display:flex;align-items:center;justify-content:space-between;padding:20px 25px}
-            .total-lbl{color:#c9a84c;font-size:11px;font-weight:800;text-transform:uppercase}
-            .total-val{color:#fff;font-size:24px;font-weight:800}
+            .pdf-total-box{margin-top:20px;background:linear-gradient(108deg, #1f1f23 55%, #d4af37 55.1%);display:flex;align-items:center;justify-content:flex-start;padding:0;height:95px;}
+            .pdf-total-lbl{color:#d4af37;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;width:55%;display:flex;align-items:center;padding-left:35px;}
+            .pdf-total-val{color:#fff;font-size:20px;font-weight:800;width:45%;display:flex;justify-content:center;align-items:center;}
 
-            /* Rec Banner */
-            .rec-banner{background:#fdfcf8;border:1px solid #eee;display:flex;align-items:center;padding:20px;position:relative}
-            .rec-border{position:absolute;left:0;top:0;bottom:0;width:12px;background:#c9a84c}
-            .rec-icon{margin-left:25px;margin-right:25px}
-            .rec-icon svg{width:36px;height:36px;color:#c9a84c;stroke-width:1.5}
-            .rec-content h3{font-size:11px;font-weight:800;color:#111;margin-bottom:6px;text-transform:uppercase}
-            .rec-content p{font-size:12px;color:#444;line-height:1.5;font-weight:500}
+            /* Rec Banner & Obs */
+            .pdf-rec-banner{background:#fdfcf8;border-top:1px solid #eee;border-bottom:1px solid #eee;border-right:1px solid #eee;border-left:14px solid #d4af37;display:flex;align-items:center;padding:15px 25px 15px 10px;}
+            .pdf-rec-icon{margin-left:20px;margin-right:25px}
+            .pdf-rec-icon svg{stroke:#d4af37;stroke-width:1.2;width:30px;height:30px;}
+            .pdf-rec-content h3{font-size:11px;font-weight:800;color:#111;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;}
+            .pdf-rec-content p{font-size:12px;color:#555;line-height:1.4;font-weight:500;}
+            
+            .pdf-obs-banner{background:#f8f8f8;border-top:1px solid #eee;border-bottom:1px solid #eee;border-right:1px solid #eee;border-left:14px solid #1f1f23;display:flex;flex-direction:column;justify-content:center;padding:15px 25px;margin-top:15px;}
+            .pdf-obs-content{width:100%;}
+            .pdf-obs-content h3{font-size:10px;font-weight:800;color:#111;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px;}
+            .pdf-obs-content div{font-size:10px;color:#555;line-height:1.4;font-weight:500;word-wrap:break-word;word-break:break-all;white-space:pre-wrap;line-break:anywhere;max-width:100%;}
 
             /* Footer */
-            .footer{position:absolute;bottom:12mm;left:15mm;right:15mm;padding-top:10px;border-top:2px solid #c9a84c;font-size:9px;color:#888;display:flex;justify-content:space-between;text-transform:uppercase;letter-spacing:1px}
+            .pdf-footer{position:absolute;bottom:15mm;left:20mm;right:20mm;padding-top:15px;border-top:1px solid #d4af37;font-size:8px;color:#999;display:flex;justify-content:space-between;text-transform:uppercase;letter-spacing:1px}
+            
+            /* SVGs Fixes */
+            svg { display: block; }
+
+            /* Value layout specific formatting */
+            .pdf-flux-val{display:flex; align-items:baseline; gap:6px;}
+            .pdf-flux-currency{font-size:14px;font-weight:800;color:#222;}
+            .pdf-flux-number{font-size:16px;font-weight:800;color:#222;}
         </style>
 
         <div id="pdf-content">
-            <div class="header">
-                <div class="header-left">
+            <div class="pdf-header">
+                <div class="pdf-header-left">
                     <img src="${headerLogoSrc}">
                 </div>
-                <div class="header-center">
+                <div class="pdf-header-center">
                     <h2>SIMULAÇÃO</h2>
                     <h1>ESTRATÉGICA</h1>
-                    <span class="sub">DE CONSÓRCIO</span>
+                    <span class="pdf-sub">DE CONSÓRCIO</span>
                 </div>
-                <div class="header-right">
+                <div class="pdf-header-right">
                     <span>ADMINISTRADORA</span>
                     ${adminLogoSrc ? `<img src="${adminLogoSrc}">` : `<span style="font-weight:800;color:#111;font-size:16px">${adminName}</span>`}
                 </div>
             </div>
 
-            <div class="top-banner">
-                <div class="top-left">
-                    <span class="lbl">CRÉDITO DISPONÍVEL<br>PARA AQUISIÇÃO</span>
-                    <span class="val">R$ ${credito}</span>
+            <div class="pdf-top-banner">
+                <div class="pdf-top-left">
+                    <span class="pdf-lbl">CRÉDITO DISPONÍVEL<br>PARA AQUISIÇÃO</span>
+                    <div class="pdf-val-wrap">
+                        <span class="pdf-val-curr">R$</span>
+                        <span class="pdf-val-num">${resultCL}</span>
+                    </div>
                 </div>
-                <div class="top-right">
-                    <div class="tr-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                        <span class="lbl">PLANO</span>
-                        <span class="val">${planoText}</span>
+                <div class="pdf-top-right">
+                    <div class="pdf-tr-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="9" y1="13" x2="15" y2="13"></line><line x1="9" y1="17" x2="15" y2="17"></line><line x1="9" y1="9" x2="11" y2="9"></line></svg>
+                        <span class="pdf-lbl">PLANO</span>
+                        <span class="pdf-val" style="font-size:12px;">R$ ${credito}</span>
                     </div>
-                    <div class="tr-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                        <span class="lbl">PRAZO</span>
-                        <span class="val">${prazo} MESES</span>
+                    <div class="pdf-tr-item-divider"></div>
+                    <div class="pdf-tr-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><rect x="10" y="14" width="4" height="4"></rect></svg>
+                        <span class="pdf-lbl">PRAZO</span>
+                        <span class="pdf-val" style="font-size:17px;line-height:1">${prazo}<br><span style="font-size:8px;font-weight:500;color:#999;letter-spacing:1px;position:relative;top:-3px">MESES</span></span>
                     </div>
-                    <div class="tr-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
-                        <span class="lbl">ESTRATÉGIA</span>
-                        <span class="val">${lanceTotal}% DE LANCE</span>
+                    <div class="pdf-tr-item-divider"></div>
+                    <div class="pdf-tr-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.2"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="3"></circle><line x1="17.65" y1="6.35" x2="22" y2="2"></line><polyline points="17 2 22 2 22 7"></polyline></svg>
+                        <span class="pdf-lbl">ESTRATÉGIA</span>
+                        <span class="pdf-val" style="font-size:15px;line-height:1">${lanceTotal}%<br><span style="font-size:8px;font-weight:500;color:#999;letter-spacing:1px;position:relative;top:-3px">DE LANCE</span></span>
                     </div>
                 </div>
             </div>
 
-            <div class="cols">
+            <div class="pdf-cols">
                 <!-- ESTRATÉGIA DE LANCE -->
-                <div class="col">
-                    <div class="col-title">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><circle cx="10" cy="13" r="2"></circle><path d="M12 13h4"></path></svg>
+                <div class="pdf-col">
+                    <div class="pdf-col-title">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><circle cx="10" cy="13" r="3"></circle><polyline points="14 2 14 8 20 8"></polyline><path d="M13 13h3"></path></svg>
                         ESTRATÉGIA DE LANCE
                     </div>
 
-                    <div class="stat-box">
-                        <div class="sb-left">
-                            <div class="sb-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                    <div class="pdf-stat-box">
+                        <div class="pdf-sb-left">
+                            <div class="pdf-sb-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg>
                             </div>
-                            <div class="sb-info">
-                                <span class="sb-lbl">LANCE EMBUTIDO</span>
-                            </div>
-                        </div>
-                        <span class="sb-val">R$ ${valorEmb}</span>
-                    </div>
-
-                    <div class="stat-box">
-                        <div class="sb-left">
-                            <div class="sb-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-                            </div>
-                            <div class="sb-info">
-                                <span class="sb-lbl">RECURSO PRÓPRIO</span>
+                            <div class="pdf-sb-info">
+                                <span class="pdf-sb-lbl">LANCE<br>EMBUTIDO</span>
                             </div>
                         </div>
-                        <span class="sb-val">R$ ${valorPag}</span>
+                        <div class="pdf-sb-val-wrap">
+                            <span class="pdf-sb-curr">R$</span>
+                            <span class="pdf-sb-val">${valorEmb}</span>
+                        </div>
                     </div>
 
-                    <div class="total-box">
-                        <span class="total-lbl">LANCE TOTAL</span>
-                        <span class="total-val">${lanceTotal}%</span>
+                    <div class="pdf-stat-box">
+                        <div class="pdf-sb-left">
+                            <div class="pdf-sb-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                            </div>
+                            <div class="pdf-sb-info">
+                                <span class="pdf-sb-lbl">RECURSO<br>PRÓPRIO</span>
+                            </div>
+                        </div>
+                        <div class="pdf-sb-val-wrap">
+                            <span class="pdf-sb-curr">R$</span>
+                            <span class="pdf-sb-val">${valorPag}</span>
+                        </div>
+                    </div>
+
+                    <div class="pdf-total-box">
+                        <span class="pdf-total-lbl">LANCE TOTAL</span>
+                        <span class="pdf-total-val">${lanceTotal}%</span>
                     </div>
                 </div>
 
                 <!-- FLUXO FINANCEIRO -->
-                <div class="col">
-                    <div class="col-title">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                <div class="pdf-col">
+                    <div class="pdf-col-title">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.5"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line><polyline points="2 18 6 14 12 20 22 6"></polyline></svg>
                         FLUXO FINANCEIRO
                     </div>
                     
-                    <div class="stat-box">
-                        <div class="sb-left">
-                            <div class="sb-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+                    <div class="pdf-stat-box">
+                        <div class="pdf-sb-left">
+                            <div class="pdf-sb-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.2"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline><line x1="12" y1="5" x2="12" y2="11"></line><polyline points="10 7 12 5 14 7"></polyline></svg>
                             </div>
-                            <div class="sb-info">
-                                <span class="sb-lbl">1ª PARCELA <span class="sb-sub" style="display:inline">(ENTRADA)</span></span>
-                                
+                            <div class="pdf-sb-info">
+                                <span class="pdf-sb-lbl" style="margin-bottom:0">1ª<br>PARCELA</span>
+                                <span class="pdf-sb-sub">(ENTRADA)</span>
                             </div>
                         </div>
-                        <span class="sb-val">R$ ${resultPrim}</span>
+                        <div class="pdf-sb-val-wrap">
+                            <span class="pdf-sb-curr">R$</span>
+                            <span class="pdf-sb-val" style="font-size:14.5px;">${resultPrim}</span>
+                        </div>
                     </div>
 
-                    <div class="stat-box">
-                        <div class="sb-left">
-                            <div class="sb-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    <div class="pdf-stat-box">
+                        <div class="pdf-sb-left">
+                            <div class="pdf-sb-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path><line x1="4" y1="12" x2="14" y2="12"></line></svg>
                             </div>
-                            <div class="sb-info">
-                                <span class="sb-lbl">PARCELAS ANTES<br>DA CONTEMPLAÇÃO</span>
+                            <div class="pdf-sb-info">
+                                <span class="pdf-sb-lbl">PARCELAS<br>ANTES DA<br>CONTEMPLAÇÃO</span>
                             </div>
                         </div>
-                        <span class="sb-val">R$ ${resultDemais}</span>
+                        <div class="pdf-sb-val-wrap">
+                            <span class="pdf-sb-curr">R$</span>
+                            <span class="pdf-sb-val" style="font-size:14.5px;">${resultDemais}</span>
+                        </div>
                     </div>
 
-                    <div class="stat-box">
-                        <div class="sb-left">
-                            <div class="sb-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                    <div class="pdf-stat-box">
+                        <div class="pdf-sb-left">
+                            <div class="pdf-sb-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
                             </div>
-                            <div class="sb-info">
-                                <span class="sb-lbl">PARCELAS APÓS<br>CONTEMPLAÇÃO</span>
+                            <div class="pdf-sb-info">
+                                <span class="pdf-sb-lbl">PARCELAS<br>APÓS<br>CONTEMPLAÇÃO</span>
                             </div>
                         </div>
-                        <span class="sb-val">R$ ${resultPos}</span>
+                        <div class="pdf-sb-val-wrap">
+                            <span class="pdf-sb-curr">R$</span>
+                            <span class="pdf-sb-val" style="font-size:14.5px;">${resultPos}</span>
+                        </div>
                     </div>
 
-                    <div class="stat-box" style="margin-bottom:0">
-                        <div class="sb-left">
-                            <div class="sb-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    <div class="pdf-stat-box" style="margin-bottom:0">
+                        <div class="pdf-sb-left">
+                            <div class="pdf-sb-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                             </div>
-                            <div class="sb-info">
-                                <span class="sb-lbl">PRAZO RESTANTE</span>
+                            <div class="pdf-sb-info">
+                                <span class="pdf-sb-lbl" style="margin-bottom:0">PRAZO<br>RESTANTE</span>
                             </div>
                         </div>
-                        <span class="sb-val">${resultPrazo} MESES</span>
+                        <div class="pdf-sb-val-wrap">
+                            <span class="pdf-sb-val" style="font-size:18.5px;">${resultPrazo}</span>
+                            <span class="pdf-sb-curr" style="font-size:10px">MESES</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="rec-banner">
-                <div class="rec-border"></div>
-                <div class="rec-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21h6"></path><path d="M12 21v-4"></path><path d="M12 4V2"></path><path d="M4 12H2"></path><path d="M22 12h-2"></path><path d="M18.36 5.64l-1.41 1.41"></path><path d="M7.05 18.36l-1.41 1.41"></path><path d="M7.05 5.64L5.64 7.05"></path><path d="M18.36 18.36l1.41 1.41"></path><path d="M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"></path></svg>
+            <div class="pdf-rec-banner">
+                <div class="pdf-rec-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.2"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.9 1.2 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
                 </div>
-                <div class="rec-content">
+                <div class="pdf-rec-content">
                     <h3>ESTRATÉGIA RECOMENDADA PELA CR INVEST</h3>
                     <p>Com esta estrutura de lance, você acessa um crédito líquido de R$ ${resultCL} mantendo parcelas estruturadas antes e após a contemplação, sem juros bancários.</p>
                 </div>
             </div>
+            
+            ${hasObs ? `
+            <div class="pdf-obs-banner">
+                <div class="pdf-obs-content">
+                    <h3>OBSERVAÇÕES ADICIONAIS</h3>
+                    <div>${observacoes}</div>
+                </div>
+            </div>
+            ` : ''}
 
-            <div class="footer">
+            <div class="pdf-footer">
                 <span>Data da simulação: ${dateStr.split(' ')[0]}</span>
                 <span>SEGURANÇA . PLANEJAMENTO . INTELIGÊNCIA . PATRIMONIAL</span>
                 <span>CR INVEST CONSULTORIA</span>
