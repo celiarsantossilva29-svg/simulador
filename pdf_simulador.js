@@ -82,8 +82,8 @@ window.gerarPDFSimulador = async function() {
             }
         };
 
-        // Enviar para o servidor
-        const response = await fetch('/gerar-pdf-simulador', {
+        // Enviar para o servidor local Python (rodando na máquina do usuário)
+        const response = await fetch('http://localhost:8000/gerar-pdf-simulador', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)

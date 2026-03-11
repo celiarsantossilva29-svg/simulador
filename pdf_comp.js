@@ -89,8 +89,8 @@ function gerarPDFComparativo() {
             dateStr: dateStr
         };
 
-        // ── Envia para o backend Python ──
-        fetch('/gerar-pdf-comparativo', {
+        // ── Envia para o backend Python (rodando localmente na máquina do usuário) ──
+        fetch('http://localhost:8000/gerar-pdf-comparativo', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
