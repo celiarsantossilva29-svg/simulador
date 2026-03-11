@@ -14,7 +14,7 @@ DIR  = os.path.dirname(os.path.abspath(__file__))
 # ────────────────────────────────────────
 class ComparativoPDF(FPDF):
     def __init__(self, data):
-        super().__init__('P', 'mm', 'A4')
+        super().__init__(orientation='P', unit='mm', format='A4')
         self.data = data
         self.set_auto_page_break(auto=False)
         self.set_margins(15, 2, 15)
