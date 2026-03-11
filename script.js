@@ -349,7 +349,7 @@ function calcular() {
         baseCalculo = credito;
     } else {
         // Outros: lance total sobre plano total (varia com taxas)
-        const planoTotal = credito * (1 + taxaAdm + fundoReserva + seguro);
+        const planoTotal = (parcelaMensal * prazo) + antecipadaTotal;
         baseCalculo = planoTotal;
     }
 
@@ -364,19 +364,21 @@ function calcular() {
         } else {
             if (adminKey === 'porto_seguro') {
                 const limiteEmbutido = 0.30 * credito;
-                const valorLanceOfertado = lanceTotalPct * baseCalculo;
+                const embutidoDesejado = lanceEmbutidoPct * baseCalculo;
                 
-                // Embutido usa estritamente % em relação ao crédito (até 30%)
-                valorEmbutido = Math.min(lanceEmbutidoPct, 0.30) * credito;
+                // Embutido cobra até o limite de 30% do Crédito.
+                valorEmbutido = Math.min(embutidoDesejado, limiteEmbutido);
                 
-                // O resto sai do bolso do cliente apenas se ultrapassar o limite real da cota
-                valorAPagar = Math.max(valorLanceOfertado - limiteEmbutido, 0);
-                valorTotalLance = valorLanceOfertado;
-            } else {
-                const limiteEmbutido = 0.30 * credito;
-                valorEmbutido = Math.min(lanceEmbutidoPct * baseCalculo, limiteEmbutido);
-                valorAPagar = lancePagarPct * baseCalculo;
+                // O excesso do que a pessoa tentou embutir além dos 30% vira pagar do bolso
+                const overflowEmbutido = Math.max(0, embutidoDesejado - limiteEmbutido);
+                
+                // O Lance a Pagar soma esse excesso + o percentual explícito que ela digitou a pagar
+                valorAPagar = (lancePagarPct * baseCalculo) + overflowEmbutido;
                 valorTotalLance = valorEmbutido + valorAPagar;
+            } else {
+                valorTotalLance = lanceTotalPct * baseCalculo;
+                valorEmbutido = lanceEmbutidoPct * credito;
+                valorAPagar = valorTotalLance - valorEmbutido;
             }
         }
     } else {
@@ -390,11 +392,8 @@ function calcular() {
             const valorEmbutidoDesejado = lanceEmbutidoPct * credito;
             valorEmbutido = Math.min(valorEmbutidoDesejado, limiteEmbutido);
         } else {
-            // Embutido base: usa estritamente o percentual digitado (limitado a 30% do crédito)
-            const limiteEmbutido = 0.30 * credito;
-            let embutidoDesejado = lanceEmbutidoPct * baseCalculo;
-            if (embutidoDesejado > limiteEmbutido) embutidoDesejado = limiteEmbutido;
-            valorEmbutido = embutidoDesejado;
+            // Embutido base: usa estritamente o percentual digitado sobre o crédito
+            valorEmbutido = lanceEmbutidoPct * credito;
         }
 
         valorTotalLance = valorAPagar + valorEmbutido;
@@ -403,24 +402,20 @@ function calcular() {
         let pctCalculada = valorTotalLance / baseCalculo;
         if (pctCalculada < 0) pctCalculada = 0;
 
-        let pagarPctCalc = pctCalculada - (valorEmbutido / baseCalculo);
+        let pagarPctCalc = pctCalculada - (valorEmbutido / credito);
         if (pagarPctCalc < 0) pagarPctCalc = 0;
         document.getElementById('lancePagar').value = (pagarPctCalc * 100).toFixed(2);
+        
+        // Also update embutido % for reverse cases
+        document.getElementById('lanceEmbutido').value = ((valorEmbutido / credito) * 100).toFixed(2);
     }
 
     // ========================================
     // CRÉDITO LÍQUIDO
     // ========================================
+    // O Crédito Líquido deve descontar EXCLUSIVAMENTE o "Valor Embutido" e ignorar
+    // o "Lance a Pagar" (dinheiro do próprio bolso do cliente), conforme instrução.
     let descontoCreditoLiquido = valorEmbutido;
-    if (adminKey === 'porto_seguro') {
-        const limiteEmbutido = 0.30 * credito;
-        if (modoLancePagar === 'pct') {
-            const valorLanceOfertado = lanceTotalPct * baseCalculo;
-            descontoCreditoLiquido = Math.min(valorLanceOfertado, limiteEmbutido);
-        } else {
-            descontoCreditoLiquido = Math.max(valorEmbutido, Math.min(valorTotalLance, limiteEmbutido));
-        }
-    }
     const creditoLiquido = credito - descontoCreditoLiquido;
 
     // ========================================
@@ -533,6 +528,7 @@ function gerarPDFSimuladorFrontend() {
         }
         const primeirasN = document.getElementById('primeirasN').value;
         const primeirasLabel = primeirasN === '1' ? 'À Vista' : primeirasN;
+        const primeirasTituloPdf = parseInt(primeirasN) > 1 ? `PRIMEIRAS<br>${primeirasN} PARCELAS` : `1ª<br>PARCELA`;
 
         const taxaAdm = document.getElementById('taxaAdm').value;
         const fundoReserva = document.getElementById('fundoReserva').value;
@@ -755,7 +751,7 @@ function gerarPDFSimuladorFrontend() {
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.2"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline><line x1="12" y1="5" x2="12" y2="11"></line><polyline points="10 7 12 5 14 7"></polyline></svg>
                             </div>
                             <div class="pdf-sb-info">
-                                <span class="pdf-sb-lbl" style="margin-bottom:0">1ª<br>PARCELA</span>
+                                <span class="pdf-sb-lbl" style="margin-bottom:0">${primeirasTituloPdf}</span>
                                 <span class="pdf-sb-sub">(ENTRADA)</span>
                             </div>
                         </div>
