@@ -41,8 +41,9 @@ class ComparativoPDF(FPDF):
             self.set_fill_color(c, c, c)
             self.draw_rounded_rect(x - (i * 0.3), y - (i * 0.3) + 1, w + (i * 0.6), h + (i * 0.6), r, style='F')
 
-    def draw_svg_icon(self, x, y, icon_type='generic'):
-        self.set_draw_color(*self.GOLD)
+    def draw_svg_icon(self, x, y, icon_type='generic', color=None):
+        if color is None: color = self.GOLD
+        self.set_draw_color(*color)
         self.set_line_width(0.2)
         if icon_type == 'wallet':
             self.rect(x, y+0.5, 4, 2.5, 'D')
@@ -164,16 +165,12 @@ class ComparativoPDF(FPDF):
         y_cards = self.get_y()
         
         card_h = 82
-        self.set_fill_color(*self.LIGHT_BG)
-        self.draw_rounded_rect(x1, y_cards, col_w, card_h, r=3, style='F')
-        self.draw_rounded_rect(x2, y_cards, col_w, card_h, r=3, style='F')
         
         # ────────────────────────────────────
         # CARD ESQUERDO: FINANCIAMENTO
         # ────────────────────────────────────
         self.set_fill_color(*self.DARK)
-        self.draw_rounded_rect(x1, y_cards, col_w, 12, r=3, style='F')
-        self.rect(x1, y_cards + 6, col_w, 6, style='F') # Square bottom
+        self.draw_rounded_rect(x1, y_cards, col_w, card_h, r=3, style='F')
         
         self.set_xy(x1+4, y_cards+3)
         self.set_font('Helvetica', 'B', 10)
@@ -191,37 +188,38 @@ class ComparativoPDF(FPDF):
         
         y_r = y_cards + 16
         for i, (lbl, val, icon) in enumerate(rows_fin):
-            self.draw_svg_icon(x1 + 6, y_r + 1.5, icon)
+            self.draw_svg_icon(x1 + 6, y_r + 1.5, icon, color=self.GOLD)
             self.set_xy(x1 + 12, y_r)
             
             self.set_font('Helvetica', '', 8)
-            self.set_text_color(*self.GRAY_TEXT)
+            self.set_text_color(180, 180, 180) # Light silver gray
             self.cell(40, 6, lbl)
             
             self.set_font('Helvetica', 'B', 9)
             if 'Juros' in lbl:
                 self.set_text_color(*self.RED)
             else:
-                self.set_text_color(*self.DARK)
+                self.set_text_color(*self.WHITE)
             
             w_val = self.get_string_width(val)
             self.set_xy(x1 + col_w - w_val - 6, y_r)
             self.cell(w_val, 6, val)
             
             if i < len(rows_fin) - 1:
-                self.set_draw_color(225, 225, 225)
+                self.set_draw_color(60, 60, 65) # Dark thin separator
                 self.set_line_width(0.1)
                 self.line(x1 + 6, y_r + 6.0, x1 + col_w - 6, y_r + 6.0)
             y_r += 8.2
             
         # Totalizer Bottom Attached
         y_t = y_cards + 68
-        self.set_fill_color(*self.DARK)
+        self.set_fill_color(21, 21, 25) # slightly darker tone for footer
         self.draw_rounded_rect(x1, y_t, col_w, 14, r=3, style='F')
-        self.rect(x1, y_t, col_w, 6, style='F') # Square top
+        self.rect(x1, y_t, col_w, 6, style='F') # Square top to connect seamlessly
+        
         self.set_xy(x1 + 6, y_t + 4)
         self.set_font('Helvetica', '', 7)
-        self.set_text_color(*self.WHITE)
+        self.set_text_color(180, 180, 180)
         self.cell(30, 6, 'TOTAL PAGO')
         
         self.set_font('Helvetica', 'B', 12)
@@ -236,8 +234,7 @@ class ComparativoPDF(FPDF):
         # CARD DIREITO: CONSORCIO
         # ────────────────────────────────────
         self.set_fill_color(*self.GOLD)
-        self.draw_rounded_rect(x2, y_cards, col_w, 12, r=3, style='F')
-        self.rect(x2, y_cards + 6, col_w, 6, style='F')
+        self.draw_rounded_rect(x2, y_cards, col_w, card_h, r=3, style='F')
         
         self.set_xy(x2+4, y_cards+3)
         self.set_font('Helvetica', 'B', 10)
@@ -260,11 +257,11 @@ class ComparativoPDF(FPDF):
 
         y_r = y_cards + 16
         for i, (lbl, val, icon) in enumerate(rows_con):
-            self.draw_svg_icon(x2 + 6, y_r + 1.5, icon)
+            self.draw_svg_icon(x2 + 6, y_r + 1.5, icon, color=self.WHITE)
             self.set_xy(x2 + 12, y_r)
             
             self.set_font('Helvetica', '', 8)
-            self.set_text_color(*self.GRAY_TEXT)
+            self.set_text_color(*self.WHITE)
             self.cell(40, 6, lbl)
             
             self.set_font('Helvetica', 'B', 9)
@@ -274,14 +271,15 @@ class ComparativoPDF(FPDF):
             self.cell(w_val, 6, val)
             
             if i < len(rows_con) - 1:
-                self.set_draw_color(225, 225, 225)
+                # Thin transparent-like line
+                self.set_draw_color(225, 190, 120)
                 self.set_line_width(0.1)
                 self.line(x2 + 6, y_r + 6.0, x2 + col_w - 6, y_r + 6.0)
             y_r += 8.2
 
         # Totalizer Bottom Attached
         y_t = y_cards + 68
-        self.set_fill_color(*self.GOLD)
+        self.set_fill_color(185, 145, 75)  # Slightly darker tone for footer
         self.draw_rounded_rect(x2, y_t, col_w, 14, r=3, style='F')
         self.rect(x2, y_t, col_w, 6, style='F')
         
@@ -291,8 +289,8 @@ class ComparativoPDF(FPDF):
         self.cell(30, 6, 'TOTAL PAGO')
         
         self.set_font('Helvetica', 'B', 12)
-        con_total = d.get('barConVal', 'R$ 0,00')
-        if not con_total.strip().startswith('R$'):
+        con_total = str(d.get('barConVal', 'R$ 0,00')).strip()
+        if not con_total.startswith('R$'):
             con_total = 'R$ ' + con_total
             
         self.set_text_color(*self.DARK) 
@@ -354,10 +352,6 @@ class ComparativoPDF(FPDF):
         self.set_font('Helvetica', '', 10)
         self.set_text_color(*self.GRAY_TEXT)
         self.cell(0, 6, rest_part)
-        
-        # vertical divider
-        self.set_draw_color(225, 225, 225)
-        self.line(x_box + 115, y+6, x_box + 115, y+22)
         
         eco_val = str(d.get('economiaVal', 'R$ 0')).strip()
         if not eco_val.startswith('R$'):
@@ -437,7 +431,7 @@ class ComparativoPDF(FPDF):
         y_line = y_con + 12
         self.set_draw_color(225, 225, 225)
         self.set_line_width(0.1)
-        for dash_x in range(15 + label_w, int(15 + label_w + track_w + 40), 2):
+        for dash_x in range(15, 195, 2):
             self.line(dash_x, y_line, dash_x+1, y_line)
             
         self.set_y(y_line + 10)
