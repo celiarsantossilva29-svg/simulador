@@ -569,73 +569,100 @@ function gerarPDFSimuladorFrontend() {
         const formatterBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
         const planoText = formatterBRL.format(baseCalcPdf);
 
+        const showTaxas = document.getElementById('taxasRow').style.display !== 'none';
+        let taxasHtml = '';
+        if (showTaxas) {
+            taxasHtml = `
+            <div class="pdf-rates-banner">
+                <div class="pdf-rate-item">
+                    <span class="pdf-rate-lbl">TAXA ADM.</span>
+                    <span class="pdf-rate-val">${taxaAdm}%</span>
+                </div>
+                <div class="pdf-rate-item">
+                    <span class="pdf-rate-lbl">FUNDO RESERVA</span>
+                    <span class="pdf-rate-val">${fundoReserva}%</span>
+                </div>
+                <div class="pdf-rate-item">
+                    <span class="pdf-rate-lbl">SEGURO (PF)</span>
+                    <span class="pdf-rate-val">${seguroText}</span>
+                </div>
+            </div>
+            `;
+        }
+
         // Build the content for PDF
         const element = document.createElement('div');
         element.innerHTML = `
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
             *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif}
-            #pdf-content{width:210mm;height:295mm;padding:15mm 20mm;background:#fff;position:relative}
+            #pdf-content{width:210mm;height:295mm;padding:12mm 18mm;background:#fff;position:relative}
             
             /* Header */
-            .pdf-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:30px;background:#fff!important}
+            .pdf-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:40px;background:#fff!important}
             .pdf-header-left{display:flex;align-items:center;}
-            .pdf-header-left img{height:90px;object-fit:contain;background:#fff!important}
-            .pdf-header-center{text-align:left;border-left:1px solid #d4af37;padding-left:25px;flex:1;margin-left:35px;display:flex;flex-direction:column;justify-content:center;}
-            .pdf-header-center h2{font-size:16px;font-weight:400;letter-spacing:7px;color:#333;margin-bottom:5px}
-            .pdf-header-center h1{font-size:32px;font-weight:800;color:#111;line-height:1.1;letter-spacing:1px;margin-bottom:2px;}
-            .pdf-header-center .pdf-sub{font-size:13px;color:#999;letter-spacing:5px;text-transform:uppercase;margin-top:2px;display:inline-block;border-bottom:1px solid #d4af37;padding-bottom:5px;width:80%}
+            .pdf-header-left img{height:105px;object-fit:contain;background:#fff!important}
+            .pdf-header-center{text-align:left;border-left:1px solid #d4af37;padding-left:20px;flex:1;margin-left:25px;display:flex;flex-direction:column;justify-content:center;}
+            .pdf-header-center h2{font-size:14px;font-weight:400;letter-spacing:6px;color:#333;margin-bottom:3px}
+            .pdf-header-center h1{font-size:28px;font-weight:800;color:#111;line-height:1.1;letter-spacing:1px;margin-bottom:2px;}
+            .pdf-header-center .pdf-sub{font-size:11px;color:#999;letter-spacing:4px;text-transform:uppercase;margin-top:2px;display:inline-block;border-bottom:1px solid #d4af37;padding-bottom:3px;width:85%}
             .pdf-header-right{text-align:right;background:#fff!important;display:flex;flex-direction:column;align-items:flex-end;}
-            .pdf-header-right span{font-size:8px;color:#999;text-transform:uppercase;margin-bottom:8px;letter-spacing:1px;display:block}
+            .pdf-header-right span{font-size:7px;color:#999;text-transform:uppercase;margin-bottom:6px;letter-spacing:1px;display:block}
             .pdf-header-right img{height:45px;max-width:140px;object-fit:contain;background:#fff!important}
-
+ 
             /* Top Banner */
-            .pdf-top-banner{display:flex;height:120px;margin-bottom:30px;background:linear-gradient(105deg, #d4af37 46%, #f8f8f8 46.2%);}
-            .pdf-top-left{width:45%;padding:25px 30px;display:flex;flex-direction:column;justify-content:center}
-            .pdf-top-left .pdf-lbl{font-size:11px;font-weight:700;color:#222;text-transform:uppercase;line-height:1.2;margin-bottom:5px}
-            .pdf-top-left .pdf-val-wrap{display:flex;align-items:baseline;gap:6px;}
-            .pdf-top-left .pdf-val-curr{font-size:18px;font-weight:800;color:#222;}
-            .pdf-top-left .pdf-val-num{font-size:30px;font-weight:800;color:#222;letter-spacing:-0.5px;}
-            .pdf-top-right{width:55%;display:flex;align-items:center;justify-content:space-around;padding:0 15px 0 32px}
-            .pdf-tr-item{text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px; width:33%;}
-            .pdf-tr-item svg{color:#d4af37;stroke-width:1.2;stroke:#d4af37;}
-            .pdf-tr-item .pdf-lbl{font-size:8px;color:#999;text-transform:uppercase;font-weight:600;letter-spacing:1px;}
-            .pdf-tr-item .pdf-val{font-size:12px;font-weight:800;color:#222}
-            .pdf-tr-item-divider { width: 1px; height: 50px; background-color: #ddd; }
-
+            .pdf-top-banner{display:flex;height:95px;margin-bottom:15px;background:linear-gradient(105deg, #d4af37 46%, #f8f8f8 46.2%);}
+            .pdf-top-left{width:45%;padding:20px 25px;display:flex;flex-direction:column;justify-content:center}
+            .pdf-top-left .pdf-lbl{font-size:10px;font-weight:700;color:#222;text-transform:uppercase;line-height:1.2;margin-bottom:4px}
+            .pdf-top-left .pdf-val-wrap{display:flex;align-items:baseline;gap:5px;}
+            .pdf-top-left .pdf-val-curr{font-size:16px;font-weight:800;color:#222;}
+            .pdf-top-left .pdf-val-num{font-size:26px;font-weight:800;color:#222;letter-spacing:-0.5px;}
+            .pdf-top-right{width:55%;display:flex;align-items:center;justify-content:space-around;padding:0 10px 0 25px}
+            .pdf-tr-item{text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px; width:33%;}
+            .pdf-tr-item svg{width:22px; height:22px; color:#d4af37;stroke-width:1.2;stroke:#d4af37;}
+            .pdf-tr-item .pdf-lbl{font-size:7.5px;color:#999;text-transform:uppercase;font-weight:600;letter-spacing:1px;}
+            .pdf-tr-item .pdf-val{font-size:11px;font-weight:800;color:#222}
+            .pdf-tr-item-divider { width: 1px; height: 40px; background-color: #ddd; }
+ 
             /* Columns */
-            .pdf-cols{display:flex;justify-content:space-between;margin-bottom:15px}
-            .pdf-col{width:47.5%;background:#f8f8f8;padding:25px;min-height:300px}
-            .pdf-col-title{display:flex;align-items:center;gap:12px;font-size:14px;font-weight:800;color:#222;text-transform:uppercase;margin-bottom:25px}
-            .pdf-col-title svg{color:#d4af37}
-
-            .pdf-stat-box{background:#fff;padding:15px 20px;margin-bottom:15px;display:flex;align-items:center;justify-content:space-between;box-shadow: 0 2px 5px rgba(0,0,0,0.02); height: 85px;}
-            .pdf-sb-left{display:flex;align-items:center;gap:12px;width:60%;}
-            .pdf-sb-icon{width:45px;height:45px;border-radius:50%;border:1px solid #eee;display:flex;align-items:center;justify-content:center;background:#fff;flex-shrink:0;}
-            .pdf-sb-icon svg{color:#d4af37!important;stroke:#d4af37!important;stroke-width:1.2px!important;fill:none!important}
+            .pdf-cols{display:flex;justify-content:space-between;margin-bottom:12px}
+            .pdf-col{width:48%;background:#f8f8f8;padding:15px;min-height:220px}
+            .pdf-col-title{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:800;color:#222;text-transform:uppercase;margin-bottom:15px}
+            .pdf-col-title svg{width:18px;height:18px; color:#d4af37}
+ 
+            .pdf-stat-box{background:#fff;padding:10px 15px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;box-shadow: 0 2px 5px rgba(0,0,0,0.02); height: 68px;}
+            .pdf-sb-left{display:flex;align-items:center;gap:10px;width:60%;}
+            .pdf-sb-icon{width:38px;height:38px;border-radius:50%;border:1px solid #eee;display:flex;align-items:center;justify-content:center;background:#fff;flex-shrink:0;}
+            .pdf-sb-icon svg{width:20px;height:20px; color:#d4af37!important;stroke:#d4af37!important;stroke-width:1.2px!important;fill:none!important}
             .pdf-sb-info{display:flex;flex-direction:column;flex:1;}
-            .pdf-sb-lbl{font-size:7.5px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:2px;letter-spacing:0.5px;line-height:1.2;}
-            .pdf-sb-sub{font-size:6px;color:#aaa;text-transform:uppercase}
+            .pdf-sb-lbl{font-size:7px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:2px;letter-spacing:0.5px;line-height:1.2;}
+            .pdf-sb-sub{font-size:5.5px;color:#aaa;text-transform:uppercase}
             
             .pdf-sb-val-wrap{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:1px;width:40%;flex-shrink:0;}
-            .pdf-sb-curr{font-size:11.5px;font-weight:800;color:#111;}
-            .pdf-sb-val{font-size:17px;font-weight:800;color:#111;text-align:right;letter-spacing:-0.5px;}
-
-            .pdf-total-box{margin-top:20px;background:linear-gradient(108deg, #1f1f23 55%, #d4af37 55.1%);display:flex;align-items:center;justify-content:flex-start;padding:0;height:95px;}
-            .pdf-total-lbl{color:#d4af37;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;width:55%;display:flex;align-items:center;padding-left:35px;}
-            .pdf-total-val{color:#fff;font-size:20px;font-weight:800;width:45%;display:flex;justify-content:center;align-items:center;}
-
+            .pdf-sb-curr{font-size:10.5px;font-weight:800;color:#111;}
+            .pdf-sb-val{font-size:15px;font-weight:800;color:#111;text-align:right;letter-spacing:-0.5px;}
+ 
+            .pdf-total-box{margin-top:12px;background:linear-gradient(108deg, #1f1f23 55%, #d4af37 55.1%);display:flex;align-items:center;justify-content:flex-start;padding:0;height:75px;}
+            .pdf-total-lbl{color:#d4af37;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;width:55%;display:flex;align-items:center;padding-left:25px;}
+            .pdf-total-val{color:#fff;font-size:18px;font-weight:800;width:45%;display:flex;justify-content:center;align-items:center;}
+ 
             /* Rec Banner & Obs */
-            .pdf-rec-banner{background:#fdfcf8;border-top:1px solid #eee;border-bottom:1px solid #eee;border-right:1px solid #eee;border-left:14px solid #d4af37;display:flex;align-items:center;padding:15px 25px 15px 10px;}
-            .pdf-rec-icon{margin-left:20px;margin-right:25px}
-            .pdf-rec-icon svg{stroke:#d4af37;stroke-width:1.2;width:30px;height:30px;}
-            .pdf-rec-content h3{font-size:11px;font-weight:800;color:#111;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;}
-            .pdf-rec-content p{font-size:12px;color:#555;line-height:1.4;font-weight:500;}
+            .pdf-rec-banner{background:#fdfcf8;border-top:1px solid #eee;border-bottom:1px solid #eee;border-right:1px solid #eee;border-left:14px solid #d4af37;display:flex;align-items:center;padding:12px 20px 12px 8px;}
+            .pdf-rec-icon{margin-left:15px;margin-right:20px}
+            .pdf-rec-icon svg{stroke:#d4af37;stroke-width:1.2;width:26px;height:26px;}
+            .pdf-rec-content h3{font-size:10px;font-weight:800;color:#111;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.5px;}
+            .pdf-rec-content p{font-size:11px;color:#555;line-height:1.3;font-weight:500;}
             
-            .pdf-obs-banner{background:#f8f8f8;border-top:1px solid #eee;border-bottom:1px solid #eee;border-right:1px solid #eee;border-left:14px solid #1f1f23;display:flex;flex-direction:column;justify-content:center;padding:15px 25px;margin-top:15px;}
+            .pdf-obs-banner{background:#f8f8f8;border-top:1px solid #eee;border-bottom:1px solid #eee;border-right:1px solid #eee;border-left:14px solid #1f1f23;display:flex;flex-direction:column;justify-content:center;padding:12px 20px;margin-top:10px;}
             .pdf-obs-content{width:100%;}
-            .pdf-obs-content h3{font-size:10px;font-weight:800;color:#111;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px;}
-            .pdf-obs-content div{font-size:10px;color:#555;line-height:1.4;font-weight:500;word-wrap:break-word;word-break:break-all;white-space:pre-wrap;line-break:anywhere;max-width:100%;}
+            .pdf-obs-content h3{font-size:9px;font-weight:800;color:#111;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;}
+            .pdf-obs-content div{font-size:9.5px;color:#555;line-height:1.3;font-weight:500;word-wrap:break-word;word-break:break-all;white-space:pre-wrap;line-break:anywhere;max-width:100%;}
+ 
+            /* Rates Banner */
+            .pdf-rates-banner{display:flex;justify-content:space-around;background:#fdfcf8;border:1px solid #eee;padding:10px;margin-bottom:10px;border-radius:4px}
+            .pdf-rate-item{text-align:center;display:flex;flex-direction:column;gap:3px}
+            .pdf-rate-lbl{font-size:7.5px;color:#999;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
+            .pdf-rate-val{font-size:11px;font-weight:800;color:#222}
 
             /* Footer */
             .pdf-footer{position:absolute;bottom:15mm;left:20mm;right:20mm;padding-top:15px;border-top:1px solid #d4af37;font-size:8px;color:#999;display:flex;justify-content:space-between;text-transform:uppercase;letter-spacing:1px}
@@ -807,6 +834,8 @@ function gerarPDFSimuladorFrontend() {
                     </div>
                 </div>
             </div>
+
+            ${taxasHtml}
 
             <div class="pdf-rec-banner">
                 <div class="pdf-rec-icon">
