@@ -517,14 +517,12 @@ function gerarPDFSimuladorFrontend() {
         const tipo = document.getElementById('tipoBem');
         const tipoText = tipo.options[tipo.selectedIndex].text;
 
-        let modeLabel = currentMode === 'integral' ? 'Parcela Integral' : 'Parcela Reduzida';
-        if (currentMode === 'reduzida') {
-            const valRed = parseFloat(document.getElementById('pctReducao').value) || 25;
-            // User requested to show the reduction percentage itself as "X% until contemplation"
-            // Example: "25% até a Contemplação" (meaning paying 75%? Or paying 25%? User wording is key.)
-            // The prompt says: "se a redução é de 25% ent quero que escreva 25% ate a contemplação"
-            // So we use 'valRed' directly.
-            modeLabel += ` (${valRed}% até Contemplação)`;
+        const isReduzida = currentMode === 'reduzida';
+        let valRedPdf = 0;
+        let modeLabel = 'Parcela Integral';
+        if (isReduzida) {
+            valRedPdf = parseFloat(document.getElementById('pctReducao').value) || 25;
+            modeLabel = `Parcela Reduzida (${valRedPdf}% até Contemplação)`;
         }
         const primeirasN = document.getElementById('primeirasN').value;
         const primeirasLabel = primeirasN === '1' ? 'À Vista' : primeirasN;
@@ -667,6 +665,13 @@ function gerarPDFSimuladorFrontend() {
             /* Footer */
             .pdf-footer{position:absolute;bottom:15mm;left:20mm;right:20mm;padding-top:15px;border-top:1px solid #d4af37;font-size:8px;color:#999;display:flex;justify-content:space-between;text-transform:uppercase;letter-spacing:1px}
             
+            /* Mode Badge (Parcela Reduzida) */
+            .pdf-mode-badge{display:flex;align-items:center;justify-content:center;gap:10px;background:#fdfcf8;border:1px solid #d4af37;border-radius:4px;padding:8px 15px;margin-bottom:12px;text-align:center}
+            .pdf-mode-badge svg{width:16px;height:16px;flex-shrink:0}
+            .pdf-mode-badge-text{font-size:9px;font-weight:800;color:#222;text-transform:uppercase;letter-spacing:1px}
+            .pdf-mode-badge-text span{color:#cc0000;font-weight:800}
+            .pdf-mode-badge-sub{font-size:8px;color:#888;font-weight:600;margin-left:4px}
+
             /* SVGs Fixes */
             svg { display: block; }
 
@@ -720,6 +725,13 @@ function gerarPDFSimuladorFrontend() {
                     </div>
                 </div>
             </div>
+
+            ${isReduzida ? `
+            <div class="pdf-mode-badge">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.5"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
+                <span class="pdf-mode-badge-text">PLANO COM <span>PARCELA REDUZIDA EM ${valRedPdf}% ATÉ A CONTEMPLAÇÃO</span></span>
+            </div>
+            ` : ''}
 
             <div class="pdf-cols">
                 <!-- ESTRATÉGIA DE LANCE -->
@@ -795,6 +807,7 @@ function gerarPDFSimuladorFrontend() {
                             </div>
                             <div class="pdf-sb-info">
                                 <span class="pdf-sb-lbl">PARCELAS<br>ANTES DA<br>CONTEMPLAÇÃO</span>
+                                ${isReduzida ? `<span class="pdf-sb-sub" style="color:#d4af37;font-weight:700;font-size:6px">(REDUÇÃO DE ${valRedPdf}%)</span>` : ''}
                             </div>
                         </div>
                         <div class="pdf-sb-val-wrap">
